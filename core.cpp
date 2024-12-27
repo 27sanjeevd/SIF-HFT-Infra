@@ -5,8 +5,11 @@
 #include <concepts>
 
 template <typename T>
-concept HasRequiredMethods = requires(T t, const std::string& url) {
+concept HasRequiredMethods = requires(T t, const std::string &url, const std::string &ticker, int max_levels) {
     { t.return_request(url) } -> std::same_as<std::optional<std::string>>;
+    { t.return_bbo(ticker) } -> std::same_as<std::optional<BBO>>;
+    { t.return_last_trade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
+    { t.return_current_orderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
 };
 
 
@@ -41,6 +44,29 @@ int main() {
     else {
         std::cout << "2------\n";
     }
+
+    std::optional<Orderbook_State> current_orderbook = coinbase.return_current_orderbook("eth-usd", 5);
+    
+    if (current_orderbook) {
+        for (auto level : (*current_orderbook).bids) {
+            std::cout << "Tuple values: ("
+              << std::get<0>(level) << ", "
+              << std::get<1>(level) << ", "
+              << std::get<2>(level) << ")" << std::endl;
+        }
+        std::cout << "----------------\n";
+
+        for (auto level : (*current_orderbook).asks) {
+            std::cout << "Tuple values: ("
+              << std::get<0>(level) << ", "
+              << std::get<1>(level) << ", "
+              << std::get<2>(level) << ")" << std::endl;
+        }
+    }
+    else {
+        std::cout << "3----\n";
+    }
+    
 
     return 0;
 }

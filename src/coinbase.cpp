@@ -2,6 +2,7 @@
 #include "simdjson.h"
 
 #include <iostream>
+#include <regex>
 
 using namespace simdjson;
 
@@ -100,7 +101,37 @@ std::optional<Latest_Trade> Coinbase::return_last_trade(const std::string &ticke
     catch (...) {
         return std::nullopt;
     }
-}   
+}
+
+
+
+std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::string &ticker, int max_levels) {
+    std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/book?level=2");
+
+    std::optional<std::string> response = return_request(url);
+    if (!response) {
+        return std::nullopt;
+    }
+
+    Orderbook_State output;
+
+    simdjson::ondemand::parser parser;
+
+    try {
+        simdjson::ondemand::document doc = parser.iterate(*response);
+
+        std::vector<std::tuple<double, double, int>> bids = parse_levels(doc["bids"], max_levels);
+        std::vector<std::tuple<double, double, int>> asks = parse_levels(doc["asks"], max_levels);
+
+        output.bids = bids;
+        output.asks = asks;
+
+        return output;
+    }
+    catch (...) {
+        return std::nullopt;
+    }
+}
 
 
 
@@ -119,4 +150,45 @@ bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
     char* end;
     value = std::strtod(temp.c_str(), &end);
     return end == temp.c_str() + temp.length();
+}
+
+template <typename T>
+std::vector<std::tuple<double, double, int>> Coinbase::parse_levels(T input, int max_levels) {
+    std::vector<std::tuple<double, double, int>> output;
+
+    auto a = input.get_array();
+    auto& arr = a.value();
+
+    int count = 0;
+
+    for (auto elem : arr) {
+        if (count >= max_levels) {
+            break;
+        }
+        double first = 0.0, second = 0.0;
+        int third = 0;
+
+        int index = 0;
+        for (auto val : elem) {
+            if (index == 0) {
+                std::string_view sv = val.get_string().value_unsafe();
+                std::string temp(sv);
+                first = std::stod(temp);
+            }
+            else if (index == 1) {
+                std::string_view sv = val.get_string().value_unsafe();
+                std::string temp(sv);
+                second = std::stod(temp);
+            }
+            else if (index == 2) {
+                third = val.get_int64();
+            }
+            index++;    
+        }
+
+        output.emplace_back(first, second, third);
+        count++;
+    }
+
+    return output;
 }

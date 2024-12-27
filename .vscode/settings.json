@@ -55,6 +55,7 @@
         "condition_variable": "cpp",
         "forward_list": "cpp",
         "iomanip": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "regex": "cpp"
     }
 }
