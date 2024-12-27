@@ -50,6 +50,11 @@
         "typeinfo": "cpp",
         "unordered_map": "cpp",
         "variant": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "charconv": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "iomanip": "cpp",
+        "span": "cpp"
     }
 }
