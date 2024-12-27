@@ -152,6 +152,7 @@ bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
     return end == temp.c_str() + temp.length();
 }
 
+// Messy, can be cleaned up
 template <typename T>
 std::vector<std::tuple<double, double, int>> Coinbase::parse_levels(T input, int max_levels) {
     std::vector<std::tuple<double, double, int>> output;
