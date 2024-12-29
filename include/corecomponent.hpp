@@ -21,6 +21,8 @@ public:
 
     Orderbook_State get_top_n_levels(const std::string &ticker, int n);
 
+    std::pair<std::string, std::string> find_best_bbo_exchange(const std::string &ticker);
+
 private:
     int server_fd = -1;
 

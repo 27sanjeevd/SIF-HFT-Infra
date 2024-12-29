@@ -136,3 +136,37 @@ Orderbook_State CoreComponent::get_top_n_levels(const std::string &ticker, int n
 
     return output;
 }
+
+
+
+std::pair<std::string, std::string> CoreComponent::find_best_bbo_exchange(const std::string &ticker) {
+    std::string bid_exchange = "", ask_exchange = "";
+    double bid_price = -1, ask_price = -1;
+
+    for (const std::string &exchange : exchange_list) {
+        Exchange* exchange_ptr = exchange_map[exchange];
+
+        auto BBO = exchange_ptr->return_bbo(ticker);
+
+        if (bid_price == -1) {
+            bid_price = BBO->bid;
+            bid_exchange = exchange_ptr->get_name();
+        }
+        else if (bid_price < BBO->bid) {
+            bid_price = BBO->bid;
+            bid_exchange = exchange_ptr->get_name();
+        }
+
+        if (ask_price == -1) {
+            ask_price = BBO->ask;
+            ask_exchange = exchange_ptr->get_name();
+        }
+        else if (ask_price > BBO->ask) {
+            ask_price = BBO->ask;
+            ask_exchange = exchange_ptr->get_name();
+        }
+    }
+
+
+    return std::make_pair(bid_exchange, ask_exchange);
+}
