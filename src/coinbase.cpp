@@ -133,6 +133,10 @@ std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::str
     }
 }
 
+std::string Coinbase::get_name() {
+    return name;
+}
+
 
 
 size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
@@ -140,6 +144,8 @@ size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::s
     response->append((char *)contents, totalSize);
     return totalSize;
 }
+
+
 
 bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
     if (view.empty()) {
@@ -151,6 +157,8 @@ bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
     value = std::strtod(temp.c_str(), &end);
     return end == temp.c_str() + temp.length();
 }
+
+
 
 // Messy, can be cleaned up
 template <typename T>
