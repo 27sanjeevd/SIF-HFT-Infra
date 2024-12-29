@@ -16,6 +16,7 @@ struct Latest_Trade {
     double size;
 };
 
+//price, volume, num orders
 struct Orderbook_State {
     std::vector<std::tuple<double, double, int>> bids; 
     std::vector<std::tuple<double, double, int>> asks; 

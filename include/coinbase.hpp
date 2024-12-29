@@ -12,13 +12,13 @@
 
 class Coinbase : public Exchange {
 public:
-    std::optional<std::string> return_request(const std::string &url);
+    std::optional<std::string> return_request(const std::string &url) override;
 
-    std::optional<BBO> return_bbo(const std::string &ticker);
+    std::optional<BBO> return_bbo(const std::string &ticker) override;
 
-    std::optional<Latest_Trade> return_last_trade(const std::string &ticker);
+    std::optional<Latest_Trade> return_last_trade(const std::string &ticker) override;
 
-    std::optional<Orderbook_State> return_current_orderbook(const std::string &ticker, int max_levels);
+    std::optional<Orderbook_State> return_current_orderbook(const std::string &ticker, int max_levels) override;
 
     std::string get_name() override;
 

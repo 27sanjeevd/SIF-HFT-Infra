@@ -22,9 +22,13 @@ int main() {
     Coinbase coinbase;
 
     std::unordered_map<std::string, Exchange*> exchange_map;
-    exchange_map[coinbase.get_name()] = &coinbase;
+    std::vector<std::string> exchange_list;
 
-    CoreComponent cc(std::move(exchange_map));
+    exchange_map[coinbase.get_name()] = &coinbase;
+    exchange_list.push_back(coinbase.get_name());
+
+
+    CoreComponent cc(std::move(exchange_map), std::move(exchange_list));
     cc.run();
 
     return 0;

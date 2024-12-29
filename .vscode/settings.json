@@ -57,6 +57,8 @@
         "iomanip": "cpp",
         "span": "cpp",
         "regex": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "__tree": "cpp",
+        "map": "cpp"
     }
 }
