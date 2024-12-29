@@ -12,6 +12,7 @@ concept HasRequiredMethods = requires(T t, const std::string &url, const std::st
     { t.return_bbo(ticker) } -> std::same_as<std::optional<BBO>>;
     { t.return_last_trade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
     { t.return_current_orderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
+    { t.get_name() } -> std::same_as<std::string>;
 };
 
 int main() {
@@ -25,7 +26,6 @@ int main() {
 
     CoreComponent cc(std::move(exchange_map));
     cc.run();
-    
 
     return 0;
 }
