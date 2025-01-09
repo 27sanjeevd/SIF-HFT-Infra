@@ -18,6 +18,14 @@ void CoreComponent::run() {
     std::thread listeningThread(&CoreComponent::receive_connections, this);
 
     listeningThread.join();
+
+    /*
+    auto exchange = exchange_list[0];
+
+    auto result = exchange_map[exchange]->return_request("https://api.exchange.coinbase.com/currencies");
+
+    std::cout << *result << "\n";
+    */
 }
 
 
@@ -77,7 +85,49 @@ void CoreComponent::receive_connections() {
 
 
 void CoreComponent::connection_handler(int client_socket) {
-    std::cout << "HI\n";
+    std::cout << "in thread waiting for client\n";
+
+    char buf[1024];
+    std::string received_data;
+
+    while (true) {
+        ssize_t bytes_received = recv(client_socket, buf, sizeof(buf) - 1, 0);
+
+        if (bytes_received == -1) [[unlikely]] {
+            std::cerr << "recv failed\n";
+            break;
+        }
+
+        if (bytes_received == 0) {
+            std::cout << "Client disconnected\n";
+            break;
+        }
+
+        buf[bytes_received] = '\0';
+
+        received_data.append(buf);
+
+        int code = process_request(received_data, client_socket);
+
+        if (code == -1) {
+            std::cout << "Closed connection\n";
+            break;
+        }
+    }
+
+    close(client_socket);
+}
+
+
+
+int CoreComponent::process_request(std::string request, int client_socket) {
+    if (request == "exit") {
+        return -1;
+    }
+
+    
+
+    return 0;
 }
 
 

@@ -8,18 +8,16 @@ class CryptoConnection:
         self.host = "127.0.0.1"
         self.port = 8080
 
-    def run(self):
-        print("asd")
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def connect(self):
+        print("connect")
 
-        client_socket.connect((self.host, self.port))
+        self.socket.connect((self.host, self.port))
         print(f"Connected to server at {self.host}:{self.port}")
 
-        client_socket.close()
+    def get_bbo(self):
+        return
 
-
-if __name__ == "__main__":
-    connection = CryptoConnection()
-
-    connection.run()
+    def __del__(self):
+        self.socket.close()

@@ -9,7 +9,7 @@ using namespace simdjson;
 std::optional<std::string> Coinbase::return_request(const std::string &url) {
 
     CURL *curl = curl_easy_init();
-    if (!curl) {
+    if (!curl) [[unlikely]] {
         std::cerr << "Failed to initialize CURL" << std::endl;
         return std::nullopt;
     }
@@ -49,7 +49,7 @@ std::optional<BBO> Coinbase::return_bbo(const std::string &ticker) {
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/ticker");
 
     std::optional<std::string> response = return_request(url);
-    if (!response) {
+    if (!response) [[unlikely]] {
         return std::nullopt;
     }
     
@@ -79,7 +79,7 @@ std::optional<Latest_Trade> Coinbase::return_last_trade(const std::string &ticke
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/ticker");
 
     std::optional<std::string> response = return_request(url);
-    if (!response) {
+    if (!response) [[unlikely]] {
         return std::nullopt;
     }
     
@@ -109,7 +109,7 @@ std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::str
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/book?level=2");
 
     std::optional<std::string> response = return_request(url);
-    if (!response) {
+    if (!response) [[unlikely]] {
         return std::nullopt;
     }
 
@@ -148,7 +148,7 @@ size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::s
 
 
 bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
-    if (view.empty()) {
+    if (view.empty()) [[unlikely]] {
         return false;
     }
     

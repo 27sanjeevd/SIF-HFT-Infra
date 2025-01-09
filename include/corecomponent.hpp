@@ -19,6 +19,8 @@ public:
 
     void connection_handler(int client_socket);
 
+    int process_request(std::string request, int client_socket);
+
     Orderbook_State get_top_n_levels(const std::string &ticker, int n);
 
     std::pair<std::string, std::string> find_best_bbo_exchange(const std::string &ticker);
