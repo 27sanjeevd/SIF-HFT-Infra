@@ -6,6 +6,10 @@
 
 using namespace simdjson;
 
+Coinbase::Coinbase() {
+    assetToExchangeName["eth"] = "eth-usd";
+}
+
 std::optional<std::string> Coinbase::return_request(const std::string &url) {
 
     CURL *curl = curl_easy_init();
@@ -131,6 +135,10 @@ std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::str
     catch (...) {
         return std::nullopt;
     }
+}
+
+std::string Coinbase::get_asset_name_conversion(const std::string &name) {
+    return assetToExchangeName[name];
 }
 
 std::string Coinbase::get_name() {

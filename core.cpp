@@ -7,11 +7,12 @@
 #include <unordered_map>
 
 template <typename T>
-concept HasRequiredMethods = requires(T t, const std::string &url, const std::string &ticker, int max_levels) {
+concept HasRequiredMethods = requires(T t, const std::string &url, const std::string &ticker, int max_levels, const std::string &asset_name) {
     { t.return_request(url) } -> std::same_as<std::optional<std::string>>;
     { t.return_bbo(ticker) } -> std::same_as<std::optional<BBO>>;
     { t.return_last_trade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
     { t.return_current_orderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
+    { t.get_asset_name_conversion(asset_name) } -> std::same_as<std::string>;
     { t.get_name() } -> std::same_as<std::string>;
 };
 
