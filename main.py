@@ -9,7 +9,7 @@ if __name__ == "__main__":
     best_bid, best_ask = connection.get_bbo("eth")
     print(best_bid, best_ask)
 
-    bids, asks = connection.get_best_book("eth", 5)
+    bids, asks = connection.get_best_book("eth", 20)
     print(bids)
     print("*************")
     print(asks)

@@ -21,6 +21,8 @@ best_bid, best_ask = connection.get_bbo("eth")
 bids, asks = connection.get_best_book("eth", 5)
 ```
 
+You can view an example file directly with `main.py`.
+
 ### Supported Requests
 `.get_bbo(currency)`: calling this returns a pair of doubles representing the best bid and best ask amongst all the exchanges supported.
 ```
