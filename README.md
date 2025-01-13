@@ -9,6 +9,28 @@ make core
 ```
 After doing do, run `./core` on one terminal process to have a live running backend component. The python component is called `CryptoConnection` in a file called `client.py`. Read the below to see the guide on how to use the client class.
 
-### Supported Exchange List (Receiving Data, Sending Orders):
+## Client
+The client class is able to connect to the core backend through ipc sockets. Here's example python code showcase utilizing the class. 
+
+```
+connection = CryptoConnection()
+connection.connect()
+
+best_bid, best_ask = connection.get_bbo("eth")
+```
+
+### Supported Requests
+`.get_bbo(currency)`: calling this returns a pair of doubles representing the best bid and best ask amongst all the exchanges supported.
+```
+best_bid, best_ask = connection.get_bbo("eth")
+```
+
+
+## Supported Exchange List (Receiving Data, Sending Orders):
 - Coinbase (X, _)
 
+
+## Rate Limits
+Note the rate limits for all the supported exchanges.
+
+Coinbase Data: 10 requests per second

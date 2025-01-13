@@ -1,9 +1,12 @@
 from client import CryptoConnection
 
+import time
+
 if __name__ == "__main__":
     connection = CryptoConnection()
     connection.connect()
 
-    best_bid, best_ask = connection.get_bbo("eth")
+    for x in range(10):
+        print(connection.get_bbo("eth"))
 
-    print(best_bid, best_ask)
+        time.sleep(1)
