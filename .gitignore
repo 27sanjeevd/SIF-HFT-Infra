@@ -16,4 +16,5 @@ core
 *.tmp           # Temporary files
 *.swp           # Vim swap files
 *.out           # Compiled output files
+*.o             # More compiled output files
 
