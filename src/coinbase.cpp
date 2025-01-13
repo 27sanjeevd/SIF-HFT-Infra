@@ -124,8 +124,8 @@ std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::str
     try {
         simdjson::ondemand::document doc = parser.iterate(*response);
 
-        std::vector<std::tuple<double, double, int>> bids = parse_levels(doc["bids"], max_levels);
-        std::vector<std::tuple<double, double, int>> asks = parse_levels(doc["asks"], max_levels);
+        std::vector<std::tuple<double, double, uint64_t>> bids = parse_levels(doc["bids"], max_levels);
+        std::vector<std::tuple<double, double, uint64_t>> asks = parse_levels(doc["asks"], max_levels);
 
         output.bids = bids;
         output.asks = asks;
@@ -170,8 +170,8 @@ bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
 
 // Messy, can be cleaned up
 template <typename T>
-std::vector<std::tuple<double, double, int>> Coinbase::parse_levels(T input, int max_levels) {
-    std::vector<std::tuple<double, double, int>> output;
+std::vector<std::tuple<double, double, uint64_t>> Coinbase::parse_levels(T input, int max_levels) {
+    std::vector<std::tuple<double, double, uint64_t>> output;
 
     auto a = input.get_array();
     auto& arr = a.value();
@@ -183,7 +183,7 @@ std::vector<std::tuple<double, double, int>> Coinbase::parse_levels(T input, int
             break;
         }
         double first = 0.0, second = 0.0;
-        int third = 0;
+        uint64_t third = 0;
 
         int index = 0;
         for (auto val : elem) {

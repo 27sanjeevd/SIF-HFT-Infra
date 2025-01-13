@@ -33,7 +33,7 @@ private:
     bool stringViewToDouble(const std::string_view& view, double& value);
 
     template <typename T>
-    std::vector<std::tuple<double, double, int>> parse_levels(T input, int max_levels);
+    std::vector<std::tuple<double, double, uint64_t>> parse_levels(T input, int max_levels);
 
 
     std::unordered_map<std::string, std::string> assetToExchangeName;

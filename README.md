@@ -7,7 +7,7 @@ To build the C++ side of the system, run the following code.
 ```
 make core
 ```
-After doing do, run `./core` on one terminal process to have a live running backend component. The python component is called `CryptoConnection` in a file called `client.py`. Read the below to see the guide on how to use the client class.
+After doing so, run `./core` on one terminal process to have a live running backend component. The python component is called `CryptoConnection` in a file called `client.py`. Read the below to see the guide on how to use the client class.
 
 ## Client
 The client class is able to connect to the core backend through ipc sockets. Here's example python code showcase utilizing the class. 
