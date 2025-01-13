@@ -13,31 +13,31 @@ class CoreComponent {
 public:
     CoreComponent(std::unordered_map<std::string, Exchange*> &&map, std::vector<std::string> &&list);
 
-    void run();
+    void Run();
 
-    void receive_connections();
+    void ReceiveConnections();
 
-    void connection_handler(int client_socket);
+    void ConnectionHandler(int client_socket);
 
-    int process_request(const char* request, int client_socket);
+    int ProcessRequest(const char* request, int client_socket);
 
-    Orderbook_State get_top_n_levels(const std::string &ticker, int n);
+    Orderbook_State GetTopNLevels(const std::string &ticker, int n);
 
-    std::pair<std::string, std::string> find_best_bbo_exchange(const std::string &ticker);
+    std::pair<std::string, std::string> FindBestBBOExchange(const std::string &ticker);
 
-    BBO get_best_bbo(const std::string &ticker);
+    BBO GetBestBBO(const std::string &ticker);
 
 private:
-    int server_fd = -1;
+    int server_fd_ = -1;
 
-    std::unordered_map<std::string, Exchange*> exchange_map;
-    std::vector<std::string> exchange_list;
+    std::unordered_map<std::string, Exchange*> exchange_map_;
+    std::vector<std::string> exchange_list_;
 
-    void to_network_order(double value, char* buffer);
+    void ToNetworkOrder(double value, char* buffer);
 
-    void send_best_bbo(const char* request, int client_socket);
+    void SendBestBBO(const char* request, int client_socket);
 
-    void send_best_book(const char* request, int client_socket);
+    void SendBestBook(const char* request, int client_socket);
 };
 
 #endif // CORECOMPONENT_HPP

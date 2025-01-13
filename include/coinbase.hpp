@@ -15,13 +15,13 @@ class Coinbase : public Exchange {
 public:
     Coinbase();
 
-    std::optional<std::string> return_request(const std::string &url) override;
+    std::optional<std::string> ReturnRequest(const std::string &url) override;
 
-    std::optional<BBO> return_bbo(const std::string &ticker) override;
+    std::optional<BBO> ReturnBBO(const std::string &ticker) override;
 
-    std::optional<Latest_Trade> return_last_trade(const std::string &ticker) override;
+    std::optional<Latest_Trade> ReturnLastTrade(const std::string &ticker) override;
 
-    std::optional<Orderbook_State> return_current_orderbook(const std::string &ticker, int max_levels) override;
+    std::optional<Orderbook_State> ReturnCurrentOrderbook(const std::string &ticker, int max_levels) override;
 
     std::string get_asset_name_conversion(const std::string &name) override;
 
@@ -36,9 +36,8 @@ private:
     std::vector<std::tuple<double, double, uint64_t>> parse_levels(T input, int max_levels);
 
 
-    std::unordered_map<std::string, std::string> assetToExchangeName;
-
-    std::string name = "Coinbase";
+    std::unordered_map<std::string, std::string> asset_to_exchange_name_;
+    std::string name_ = "Coinbase";
 };
 
 #endif // COINBASE_HPP

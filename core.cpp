@@ -8,10 +8,10 @@
 
 template <typename T>
 concept HasRequiredMethods = requires(T t, const std::string &url, const std::string &ticker, int max_levels, const std::string &asset_name) {
-    { t.return_request(url) } -> std::same_as<std::optional<std::string>>;
-    { t.return_bbo(ticker) } -> std::same_as<std::optional<BBO>>;
-    { t.return_last_trade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
-    { t.return_current_orderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
+    { t.ReturnRequest(url) } -> std::same_as<std::optional<std::string>>;
+    { t.ReturnBBO(ticker) } -> std::same_as<std::optional<BBO>>;
+    { t.ReturnLastTrade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
+    { t.ReturnCurrentOrderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
     { t.get_asset_name_conversion(asset_name) } -> std::same_as<std::string>;
     { t.get_name() } -> std::same_as<std::string>;
 };
@@ -30,7 +30,7 @@ int main() {
 
 
     CoreComponent cc(std::move(exchange_map), std::move(exchange_list));
-    cc.run();
+    cc.Run();
 
     return 0;
 }

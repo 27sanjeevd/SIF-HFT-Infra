@@ -7,10 +7,10 @@
 using namespace simdjson;
 
 Coinbase::Coinbase() {
-    assetToExchangeName["eth"] = "eth-usd";
+    asset_to_exchange_name_["eth"] = "eth-usd";
 }
 
-std::optional<std::string> Coinbase::return_request(const std::string &url) {
+std::optional<std::string> Coinbase::ReturnRequest(const std::string &url) {
 
     CURL *curl = curl_easy_init();
     if (!curl) [[unlikely]] {
@@ -18,11 +18,11 @@ std::optional<std::string> Coinbase::return_request(const std::string &url) {
         return std::nullopt;
     }
 
-    std::string responseString;
+    std::string response_string;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, Coinbase::WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseString);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
     struct curl_slist *headers = nullptr;
@@ -44,15 +44,15 @@ std::optional<std::string> Coinbase::return_request(const std::string &url) {
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
 
-    return responseString;
+    return response_string;
 }
 
 
 
-std::optional<BBO> Coinbase::return_bbo(const std::string &ticker) {
+std::optional<BBO> Coinbase::ReturnBBO(const std::string &ticker) {
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/ticker");
 
-    std::optional<std::string> response = return_request(url);
+    std::optional<std::string> response = ReturnRequest(url);
     if (!response) [[unlikely]] {
         return std::nullopt;
     }
@@ -79,10 +79,10 @@ std::optional<BBO> Coinbase::return_bbo(const std::string &ticker) {
 
 
 
-std::optional<Latest_Trade> Coinbase::return_last_trade(const std::string &ticker) {
+std::optional<Latest_Trade> Coinbase::ReturnLastTrade(const std::string &ticker) {
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/ticker");
 
-    std::optional<std::string> response = return_request(url);
+    std::optional<std::string> response = ReturnRequest(url);
     if (!response) [[unlikely]] {
         return std::nullopt;
     }
@@ -109,10 +109,10 @@ std::optional<Latest_Trade> Coinbase::return_last_trade(const std::string &ticke
 
 
 
-std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::string &ticker, int max_levels) {
+std::optional<Orderbook_State> Coinbase::ReturnCurrentOrderbook(const std::string &ticker, int max_levels) {
     std::string url = std::string("https://api.exchange.coinbase.com/products/") + ticker + std::string("/book?level=2");
 
-    std::optional<std::string> response = return_request(url);
+    std::optional<std::string> response = ReturnRequest(url);
     if (!response) [[unlikely]] {
         return std::nullopt;
     }
@@ -138,19 +138,19 @@ std::optional<Orderbook_State> Coinbase::return_current_orderbook(const std::str
 }
 
 std::string Coinbase::get_asset_name_conversion(const std::string &name) {
-    return assetToExchangeName[name];
+    return asset_to_exchange_name_[name];
 }
 
 std::string Coinbase::get_name() {
-    return name;
+    return name_;
 }
 
 
 
 inline size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
-    size_t totalSize = size * nmemb;
-    response->append((char *)contents, totalSize);
-    return totalSize;
+    size_t total_size = size * nmemb;
+    response->append((char *)contents, total_size);
+    return total_size;
 }
 
 
