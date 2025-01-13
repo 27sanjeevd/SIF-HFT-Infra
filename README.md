@@ -27,7 +27,7 @@ best_bid, best_ask = connection.get_bbo("eth")
 
 
 ## Supported Exchange List (Receiving Data, Sending Orders):
-- Coinbase (X, _)
+- Coinbase (✅, ❌)
 
 
 ## Rate Limits
