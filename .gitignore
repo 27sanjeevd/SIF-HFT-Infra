@@ -1,0 +1,19 @@
+# Ignore .vscode directory
+.vscode/
+
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore core dump files
+core
+
+# Other common ignores (optional)
+*.log           # Log files
+*.tmp           # Temporary files
+*.swp           # Vim swap files
+*.out           # Compiled output files
+
