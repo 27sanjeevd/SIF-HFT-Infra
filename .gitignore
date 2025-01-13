@@ -3,7 +3,6 @@
 
 # Ignore Python bytecode and cache
 __pycache__/
-*.py[cod]
 
 # Ignore macOS system files
 .DS_Store
