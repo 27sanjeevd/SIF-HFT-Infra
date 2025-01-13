@@ -30,10 +30,10 @@ public:
 private:
     static inline size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response);
 
-    bool stringViewToDouble(const std::string_view& view, double& value);
+    bool StringViewToDouble(const std::string_view& view, double& value);
 
     template <typename T>
-    std::vector<std::tuple<double, double, uint64_t>> parse_levels(T input, int max_levels);
+    std::vector<std::tuple<double, double, uint64_t>> ParseLevels(T input, int max_levels);
 
 
     std::unordered_map<std::string, std::string> asset_to_exchange_name_;

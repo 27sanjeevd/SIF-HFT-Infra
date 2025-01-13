@@ -67,8 +67,8 @@ std::optional<BBO> Coinbase::ReturnBBO(const std::string &ticker) {
         std::string_view ask = doc["ask"];
         std::string_view bid = doc["bid"];
 
-        stringViewToDouble(bid, output.bid);
-        stringViewToDouble(ask, output.ask);
+        StringViewToDouble(bid, output.bid);
+        StringViewToDouble(ask, output.ask);
 
         return output;
     }
@@ -97,8 +97,8 @@ std::optional<Latest_Trade> Coinbase::ReturnLastTrade(const std::string &ticker)
         std::string_view price = doc["price"];
         std::string_view size = doc["size"];
 
-        stringViewToDouble(price, output.price);
-        stringViewToDouble(size, output.size);
+        StringViewToDouble(price, output.price);
+        StringViewToDouble(size, output.size);
 
         return output;
     }
@@ -124,8 +124,8 @@ std::optional<Orderbook_State> Coinbase::ReturnCurrentOrderbook(const std::strin
     try {
         simdjson::ondemand::document doc = parser.iterate(*response);
 
-        std::vector<std::tuple<double, double, uint64_t>> bids = parse_levels(doc["bids"], max_levels);
-        std::vector<std::tuple<double, double, uint64_t>> asks = parse_levels(doc["asks"], max_levels);
+        std::vector<std::tuple<double, double, uint64_t>> bids = ParseLevels(doc["bids"], max_levels);
+        std::vector<std::tuple<double, double, uint64_t>> asks = ParseLevels(doc["asks"], max_levels);
 
         output.bids = bids;
         output.asks = asks;
@@ -155,7 +155,7 @@ inline size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb,
 
 
 
-bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
+bool Coinbase::StringViewToDouble(const std::string_view& view, double& value) {
     if (view.empty()) [[unlikely]] {
         return false;
     }
@@ -170,7 +170,7 @@ bool Coinbase::stringViewToDouble(const std::string_view& view, double& value) {
 
 // Messy, can be cleaned up
 template <typename T>
-std::vector<std::tuple<double, double, uint64_t>> Coinbase::parse_levels(T input, int max_levels) {
+std::vector<std::tuple<double, double, uint64_t>> Coinbase::ParseLevels(T input, int max_levels) {
     std::vector<std::tuple<double, double, uint64_t>> output;
 
     auto a = input.get_array();
