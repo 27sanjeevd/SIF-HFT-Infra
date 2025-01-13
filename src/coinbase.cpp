@@ -147,7 +147,7 @@ std::string Coinbase::get_name() {
 
 
 
-size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
+inline size_t Coinbase::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
     size_t totalSize = size * nmemb;
     response->append((char *)contents, totalSize);
     return totalSize;

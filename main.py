@@ -6,7 +6,10 @@ if __name__ == "__main__":
     connection = CryptoConnection()
     connection.connect()
 
-    for x in range(10):
-        print(connection.get_bbo("eth"))
+    best_bid, best_ask = connection.get_bbo("eth")
+    print(best_bid, best_ask)
 
-        time.sleep(1)
+    bids, asks = connection.get_best_book("eth", 5)
+    print(bids)
+    print("*************")
+    print(asks)

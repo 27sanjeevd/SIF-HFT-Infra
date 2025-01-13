@@ -28,7 +28,7 @@ public:
     std::string get_name() override;
 
 private:
-    static size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response);
+    static inline size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *response);
 
     bool stringViewToDouble(const std::string_view& view, double& value);
 

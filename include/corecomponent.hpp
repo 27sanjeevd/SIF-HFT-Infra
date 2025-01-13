@@ -36,6 +36,8 @@ private:
     void to_network_order(double value, char* buffer);
 
     void send_best_bbo(const char* request, int client_socket);
+
+    void send_best_book(const char* request, int client_socket);
 };
 
 #endif // CORECOMPONENT_HPP

@@ -21,20 +21,11 @@ void CoreComponent::run() {
     std::thread listeningThread(&CoreComponent::receive_connections, this);
 
     listeningThread.join();
-
-    /*
-    auto exchange = exchange_list[0];
-
-    auto result = exchange_map[exchange]->return_request("https://api.exchange.coinbase.com/currencies");
-
-    std::cout << *result << "\n";
-    */
 }
 
 
 
 void CoreComponent::receive_connections() {
-
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         perror("Socket creation failed");
@@ -132,6 +123,9 @@ int CoreComponent::process_request(const char* request, int client_socket) {
     else if (message_descriptor == "best_bbo") {
         CoreComponent::send_best_bbo(request, client_socket);
     }
+    else if (message_descriptor == "best_book") {
+        CoreComponent::send_best_book(request, client_socket);
+    }
 
     return 0;
 }
@@ -141,13 +135,13 @@ int CoreComponent::process_request(const char* request, int client_socket) {
 Orderbook_State CoreComponent::get_top_n_levels(const std::string &ticker, int n) {
     Orderbook_State output;
 
-    std::map<double, std::pair<double, int>> bids;
-    std::map<double, std::pair<double, int>> asks;
+    std::map<double, std::pair<double, uint64_t>> bids;
+    std::map<double, std::pair<double, uint64_t>> asks;
 
     for (const std::string &exchange : exchange_list) {
         Exchange* exchange_ptr = exchange_map[exchange];
 
-        auto orderbook_state = exchange_ptr->return_current_orderbook(ticker, n);
+        auto orderbook_state = exchange_ptr->return_current_orderbook(exchange_ptr->get_asset_name_conversion(ticker), n);
 
         if (orderbook_state) {
             // dont need to duplicate code for bids vs asks
@@ -227,6 +221,7 @@ std::pair<std::string, std::string> CoreComponent::find_best_bbo_exchange(const 
     return std::make_pair(bid_exchange, ask_exchange);
 }
 
+// add error condition if the ticker isn't present in the get_asset_name_conversion map
 BBO CoreComponent::get_best_bbo(const std::string &ticker) {
     double best_bid = std::numeric_limits<double>::lowest(), best_ask = std::numeric_limits<double>::max();
 
@@ -265,6 +260,54 @@ void CoreComponent::send_best_bbo(const char* request, int client_socket) {
     to_network_order(output.bid, message + 4);
 
     to_network_order(output.ask, message + 12);
+
+    send(client_socket, message, sizeof(message), 0);
+}
+
+void CoreComponent::send_best_book(const char* request, int client_socket) {
+    char asset[5] = {0};
+    std::memcpy(asset, request + 20, 4);
+    std::string asset_name = std::string(asset);
+
+    char num_levels[5] = {0};
+    std::memcpy(num_levels, request + 24, 4);
+    uint32_t level_count = 0;
+
+    std::memcpy(&level_count, num_levels, sizeof(level_count));
+    level_count = OSSwapBigToHostInt32(level_count);
+
+
+    Orderbook_State output = CoreComponent::get_top_n_levels(asset_name, level_count);
+
+    uint64_t space_used = 0;
+
+    char message[8 + level_count * 48];
+    uint32_t message_size = 4 + level_count * 48;
+
+    uint32_t network_size = OSSwapHostToBigInt32(message_size);
+    std::memcpy(message + space_used, &network_size, 4);
+    space_used += 4;
+
+    uint32_t network_levels = OSSwapHostToBigInt32(level_count);
+    std::memcpy(message + space_used, &network_levels, 4);
+    space_used += 4;
+
+
+    for (auto x = 0; x < level_count; x++) {
+        to_network_order(std::get<0>(output.bids[x]), message + space_used);
+        space_used += 8;
+        to_network_order(std::get<1>(output.bids[x]), message + space_used);
+        space_used += 8;
+        to_network_order(std::get<2>(output.bids[x]), message + space_used);
+        space_used += 8;
+
+        to_network_order(std::get<0>(output.asks[x]), message + space_used);
+        space_used += 8;
+        to_network_order(std::get<1>(output.asks[x]), message + space_used);
+        space_used += 8;
+        to_network_order(std::get<2>(output.asks[x]), message + space_used);
+        space_used += 8;
+    }
 
     send(client_socket, message, sizeof(message), 0);
 }

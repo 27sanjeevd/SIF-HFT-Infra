@@ -21,18 +21,46 @@ class CryptoConnection:
         asset_name = currency.ljust(4, '\0')[:4]
 
         message_size = 20
-
         message = struct.pack('!I16s4s', message_size, message_name.encode('utf-8'), asset_name.encode('utf-8'))
 
         self.socket.sendall(message)
-        print("send request")
+
+
 
         message = self.socket.recv(20)
 
         message_size = struct.unpack('!I', message[:4])[0]
         best_bid, best_ask = struct.unpack('!dd', message[4:])
-        
+
         return best_bid, best_ask
+    
+    def get_best_book(self, currency, num_levels):
+        message_name = "best_book".ljust(16, '\0')[:16]
+        asset_name = currency.ljust(4, '\0')[:4]
+
+        message_size = 20
+        message = struct.pack('!I16s4sI', message_size, message_name.encode('utf-8'), asset_name.encode('utf-8'), num_levels)
+
+        self.socket.sendall(message)
+
+
+        message = self.socket.recv(8 + num_levels * 48)
+        message_size, num_levels = struct.unpack_from(">ii", message, offset=0)
+
+        bids = []
+        asks = []
+
+        offset = 8
+        for _ in range(num_levels):
+            bid_price, bid_volume, bid_orders = struct.unpack_from(">ddd", message, offset=offset)
+            bids.append((bid_price, bid_volume, int(bid_orders)))
+            offset += 24
+
+            ask_price, ask_volume, ask_orders = struct.unpack_from(">ddd", message, offset=offset)
+            asks.append((ask_price, ask_volume, int(ask_orders)))
+            offset += 24
+
+        return bids, asks
 
     def __del__(self):
         self.socket.close()

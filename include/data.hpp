@@ -18,8 +18,8 @@ struct Latest_Trade {
 
 //price, volume, num orders
 struct Orderbook_State {
-    std::vector<std::tuple<double, double, int>> bids; 
-    std::vector<std::tuple<double, double, int>> asks; 
+    std::vector<std::tuple<double, double, uint64_t>> bids; 
+    std::vector<std::tuple<double, double, uint64_t>> asks; 
 };
 
 #endif // DATA_HPP

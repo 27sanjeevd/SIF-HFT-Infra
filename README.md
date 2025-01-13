@@ -17,6 +17,8 @@ connection = CryptoConnection()
 connection.connect()
 
 best_bid, best_ask = connection.get_bbo("eth")
+
+bids, asks = connection.get_best_book("eth", 5)
 ```
 
 ### Supported Requests
@@ -25,9 +27,18 @@ best_bid, best_ask = connection.get_bbo("eth")
 best_bid, best_ask = connection.get_bbo("eth")
 ```
 
+`.get_best_book(currency, num_levels)`: calling this returns the coalesced best book amongst the supported exchanges, up to n levels. Returns a pair of lists, each holding a tuple representing each level. The value in the tuple take the form `(Price, Volume, Num Orders)`.
+```
+bids, asks = connection.get_best_book("eth", 5)
+```
+
 
 ## Supported Exchange List (Receiving Data, Sending Orders):
 - Coinbase (✅, ❌)
+
+
+## Supported Currency List
+- ETH
 
 
 ## Rate Limits
