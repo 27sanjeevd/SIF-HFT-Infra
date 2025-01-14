@@ -7,19 +7,13 @@ if __name__ == "__main__":
     connection.connect()
 
     result = connection.get_bbo("eth")
-    if result:
-        best_bid, best_ask = result
-        print(best_bid, best_ask)
-    else:
-        print("failed best_bbo")
+    print(result)
 
+    result = connection.get_bbo("do")
+    print(result)
 
-    result = connection.get_best_book("xrp", 5)
-    if result:
-        bids, asks = result
+    result = connection.get_best_book("eth", 5)
+    print(result)
 
-        print(bids)
-        print("*************")
-        print(asks)
-    else:
-        print("failed best book")
+    result = connection.get_best_book("do", 5)
+    print(result)

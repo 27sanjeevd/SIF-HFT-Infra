@@ -16,66 +16,51 @@ class CryptoConnection:
         self.socket.connect((self.host, self.port))
         print(f"Connected to server at {self.host}:{self.port}")
 
-    def get_bbo(self, currency):
-        message_name = "best_bbo".ljust(16, '\0')[:16]
-        asset_name = currency.ljust(4, '\0')[:4]
 
-        message_size = 20
-        message = struct.pack('!I16s4s', message_size, message_name.encode('utf-8'), asset_name.encode('utf-8'))
+    def get_bbo(self, currency):
+        message_name = "best_bbo".ljust(16, '\0')
+        asset_name = currency.ljust(4, '\0')
+        message = struct.pack('!I16s4s', 20, message_name.encode(), asset_name.encode())
 
         self.socket.sendall(message)
 
-        
-        success_message = self.socket.recv(4)
-        success = struct.unpack_from(">i", success_message, offset=0)[0]
-
+        success = struct.unpack(">i", self.socket.recv(4))[0]
         if success == 0:
             return None
-        
-        message = self.socket.recv(20)
-        offset = 0
-        
-        message_size = struct.unpack_from(">i", message, offset=offset)
-        offset += 4
 
-        best_bid, best_ask = struct.unpack_from(">dd", message, offset=offset)
+        message = self.socket.recv(20)
+        offset = 4
+        best_bid, best_ask = struct.unpack_from(">dd", message, offset)
 
         return best_bid, best_ask
-    
-    def get_best_book(self, currency, num_levels):
-        message_name = "best_book".ljust(16, '\0')[:16]
-        asset_name = currency.ljust(4, '\0')[:4]
+        
 
-        message_size = 20
-        message = struct.pack('!I16s4sI', message_size, message_name.encode('utf-8'), asset_name.encode('utf-8'), num_levels)
+    def get_best_book(self, currency, num_levels):
+        message_name = "best_book".ljust(16, '\0')
+        asset_name = currency.ljust(4, '\0')
+        message = struct.pack('!I16s4sI', 20, message_name.encode(), asset_name.encode(), num_levels)
 
         self.socket.sendall(message)
 
-        success_message = self.socket.recv(4)
-        success = struct.unpack_from(">i", success_message, offset=0)[0]
-
+        success = struct.unpack(">i", self.socket.recv(4))[0]
         if success == 0:
             return None
 
         message = self.socket.recv(8 + num_levels * 48)
-        offset = 0
-
-        message_size, num_levels = struct.unpack_from("!II", message, offset=offset)
-        offset += 8
-
-        bids = []
-        asks = []
+        offset = 8
+        bids, asks = [], []
 
         for _ in range(num_levels):
-            bid_price, bid_volume, bid_orders = struct.unpack_from("!ddd", message, offset=offset)
+            bid_price, bid_volume, bid_orders = struct.unpack_from("!ddd", message, offset)
             bids.append((bid_price, bid_volume, int(bid_orders)))
             offset += 24
 
-            ask_price, ask_volume, ask_orders = struct.unpack_from("!ddd", message, offset=offset)
+            ask_price, ask_volume, ask_orders = struct.unpack_from("!ddd", message, offset)
             asks.append((ask_price, ask_volume, int(ask_orders)))
             offset += 24
 
         return bids, asks
+
 
     def __del__(self):
         self.socket.close()
