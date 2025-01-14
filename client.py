@@ -25,12 +25,20 @@ class CryptoConnection:
 
         self.socket.sendall(message)
 
+        
+        success_message = self.socket.recv(4)
+        success = struct.unpack_from(">i", success_message, offset=0)[0]
 
-
+        if success == 0:
+            return None
+        
         message = self.socket.recv(20)
+        offset = 0
+        
+        message_size = struct.unpack_from(">i", message, offset=offset)
+        offset += 4
 
-        message_size = struct.unpack('!I', message[:4])[0]
-        best_bid, best_ask = struct.unpack('!dd', message[4:])
+        best_bid, best_ask = struct.unpack_from(">dd", message, offset=offset)
 
         return best_bid, best_ask
     
@@ -43,20 +51,27 @@ class CryptoConnection:
 
         self.socket.sendall(message)
 
+        success_message = self.socket.recv(4)
+        success = struct.unpack_from(">i", success_message, offset=0)[0]
+
+        if success == 0:
+            return None
 
         message = self.socket.recv(8 + num_levels * 48)
-        message_size, num_levels = struct.unpack_from(">ii", message, offset=0)
+        offset = 0
+
+        message_size, num_levels = struct.unpack_from("!II", message, offset=offset)
+        offset += 8
 
         bids = []
         asks = []
 
-        offset = 8
         for _ in range(num_levels):
-            bid_price, bid_volume, bid_orders = struct.unpack_from(">ddd", message, offset=offset)
+            bid_price, bid_volume, bid_orders = struct.unpack_from("!ddd", message, offset=offset)
             bids.append((bid_price, bid_volume, int(bid_orders)))
             offset += 24
 
-            ask_price, ask_volume, ask_orders = struct.unpack_from(">ddd", message, offset=offset)
+            ask_price, ask_volume, ask_orders = struct.unpack_from("!ddd", message, offset=offset)
             asks.append((ask_price, ask_volume, int(ask_orders)))
             offset += 24
 

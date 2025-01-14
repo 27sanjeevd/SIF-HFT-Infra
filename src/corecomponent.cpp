@@ -10,7 +10,7 @@
 #include <map>
 #include <algorithm>
 
-#define PORT 8080
+static constexpr int kPort = 8080;
 
 CoreComponent::CoreComponent(std::unordered_map<std::string, Exchange*> &&map,
     std::vector<std::string> &&list) : exchange_map_(std::move(map)), exchange_list_(std::move(list)) {}
@@ -35,7 +35,7 @@ void CoreComponent::ReceiveConnections() {
     sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(kPort);
 
     if (bind(server_fd_, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("Bind failed");
@@ -132,7 +132,7 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
 
 
 
-Orderbook_State CoreComponent::GetTopNLevels(const std::string &ticker, int n) {
+std::optional<Orderbook_State> CoreComponent::GetTopNLevels(const std::string &ticker, int n) {
     Orderbook_State output;
 
     std::map<double, std::pair<double, uint64_t>> bids_map;
@@ -141,7 +141,15 @@ Orderbook_State CoreComponent::GetTopNLevels(const std::string &ticker, int n) {
     for (const std::string &exchange : exchange_list_) {
         Exchange* exchange_ptr = exchange_map_[exchange];
 
-        auto orderbook_state = exchange_ptr->ReturnCurrentOrderbook(exchange_ptr->get_asset_name_conversion(ticker), n);
+        auto name_conversion_opt = exchange_ptr->get_asset_name_conversion(ticker);
+        if (!name_conversion_opt.has_value()) [[unlikely]] {
+            return std::nullopt;
+        }
+
+        auto orderbook_state = exchange_ptr->ReturnCurrentOrderbook(name_conversion_opt.value(), n);
+        if (!orderbook_state.has_value()) [[unlikely]] {
+            return std::nullopt;
+        }
 
         if (orderbook_state) {
             // dont need to duplicate code for bids vs asks
@@ -187,54 +195,29 @@ Orderbook_State CoreComponent::GetTopNLevels(const std::string &ticker, int n) {
     return output;
 }
 
-
-// find a way to combine this one and the `get_best_bbo` method
-std::pair<std::string, std::string> CoreComponent::FindBestBBOExchange(const std::string &ticker) {
-    std::string bid_exchange = "", ask_exchange = "";
-    double bid_price = -1, ask_price = -1;
-
-    for (const std::string &exchange : exchange_list_) {
-        Exchange* exchange_ptr = exchange_map_[exchange];
-
-        auto BBO = exchange_ptr->ReturnBBO(exchange_ptr->get_asset_name_conversion(ticker));
-
-        if (bid_price == -1) {
-            bid_price = BBO->bid;
-            bid_exchange = exchange_ptr->get_name();
-        }
-        else if (bid_price < BBO->bid) {
-            bid_price = BBO->bid;
-            bid_exchange = exchange_ptr->get_name();
-        }
-
-        if (ask_price == -1) {
-            ask_price = BBO->ask;
-            ask_exchange = exchange_ptr->get_name();
-        }
-        else if (ask_price > BBO->ask) {
-            ask_price = BBO->ask;
-            ask_exchange = exchange_ptr->get_name();
-        }
-    }
-
-
-    return std::make_pair(bid_exchange, ask_exchange);
-}
-
 // add error condition if the ticker isn't present in the get_asset_name_conversion map
-BBO CoreComponent::GetBestBBO(const std::string &ticker) {
+std::optional<BBO> CoreComponent::GetBestBBO(const std::string &ticker) {
     double best_bid = std::numeric_limits<double>::lowest(), best_ask = std::numeric_limits<double>::max();
 
     for (const auto &exchange : exchange_list_) {
         Exchange* exchange_ptr = exchange_map_[exchange];
 
-        auto BBO = exchange_ptr->ReturnBBO(exchange_ptr->get_asset_name_conversion(ticker));
+        auto name_conversion_opt = exchange_ptr->get_asset_name_conversion(ticker);
+        if (!name_conversion_opt.has_value()) [[unlikely]] {
+            return std::nullopt;
+        }
+
+        auto BBO = exchange_ptr->ReturnBBO(name_conversion_opt.value());
+        if (!BBO.has_value()) [[unlikely]] {
+            return std::nullopt;
+        }
 
         best_bid = std::max(best_bid, BBO->bid);
         best_ask = std::min(best_ask, BBO->ask);
     }
 
-    return { .bid = best_bid, .ask = best_ask };
+    BBO output = { .bid = best_bid, .ask = best_ask };
+    return output;
 }
 
 void CoreComponent::ToNetworkOrder(double value, char* buffer) {
@@ -249,20 +232,38 @@ void CoreComponent::SendBestBBO(const char* request, int client_socket) {
     std::memcpy(asset, request + 20, 4);
     std::string asset_name = std::string(asset);
 
-    BBO best_bbo = CoreComponent::GetBestBBO(asset_name);
+    auto best_bbo_opt = CoreComponent::GetBestBBO(asset_name);
+    if (!best_bbo_opt.has_value()) [[unlikely]] {
+        uint32_t status = 0;
+        char message[4];
 
-    char message[20];
+        uint32_t network_status = OSSwapHostToBigInt32(status);
+        std::memcpy(message, &network_status, 4);
+
+        send(client_socket, message, 4, 0);
+        return;
+    }
+
+    BBO best_bbo = best_bbo_opt.value();
+
+    char message[24];
     uint32_t message_size = 16;
 
+    uint32_t status = 1;
+    uint32_t network_status = OSSwapHostToBigInt32(status);
+    std::memcpy(message, &network_status, 4);
+
     uint32_t network_size = OSSwapHostToBigInt32(message_size);
-    std::memcpy(message, &network_size, 4);
+    std::memcpy(message + 4, &network_size, 4);
 
-    ToNetworkOrder(best_bbo.bid, message + 4);
+    ToNetworkOrder(best_bbo.bid, message + 8);
 
-    ToNetworkOrder(best_bbo.ask, message + 12);
+    ToNetworkOrder(best_bbo.ask, message + 16);
 
     send(client_socket, message, sizeof(message), 0);
 }
+
+
 
 void CoreComponent::SendBestBook(const char* request, int client_socket) {
     char asset[5] = {0};
@@ -276,13 +277,30 @@ void CoreComponent::SendBestBook(const char* request, int client_socket) {
     std::memcpy(&level_count, num_levels, sizeof(level_count));
     level_count = OSSwapBigToHostInt32(level_count);
 
+    auto top_n_levels_opt = CoreComponent::GetTopNLevels(asset_name, level_count);
+    if (!top_n_levels_opt.has_value()) [[unlikely]] {
+        uint32_t status = 0;
+        char message[4];
 
-    Orderbook_State top_n_levels = CoreComponent::GetTopNLevels(asset_name, level_count);
+        uint32_t network_status = OSSwapHostToBigInt32(status);
+        std::memcpy(message, &network_status, 4);
+
+        send(client_socket, message, 4, 0);
+        return;
+    }
+    
+    Orderbook_State top_n_levels = top_n_levels_opt.value();
 
     uint64_t space_used = 0;
 
-    char message[8 + level_count * 48];
+    char message[12 + level_count * 48];
     uint32_t message_size = 4 + level_count * 48;
+
+    uint32_t status = 1;
+    uint32_t network_status = OSSwapHostToBigInt32(status);
+    std::memcpy(message + space_used, &network_status, 4);
+    space_used += 4;
+
 
     uint32_t network_size = OSSwapHostToBigInt32(message_size);
     std::memcpy(message + space_used, &network_size, 4);

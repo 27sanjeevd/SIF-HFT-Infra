@@ -10,10 +10,12 @@ __pycache__/
 # Ignore core dump files
 core
 
+build/
+
 # Other common ignores (optional)
 *.log           # Log files
 *.tmp           # Temporary files
 *.swp           # Vim swap files
 *.out           # Compiled output files
-build/*.o             # More compiled output files
+*.o             # More compiled output files
 

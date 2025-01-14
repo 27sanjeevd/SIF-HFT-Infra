@@ -7,7 +7,12 @@
 using namespace simdjson;
 
 Coinbase::Coinbase() {
+    asset_to_exchange_name_["btc"] = "btc-usd";
     asset_to_exchange_name_["eth"] = "eth-usd";
+    asset_to_exchange_name_["xrp"] = "xrp-usd";
+    asset_to_exchange_name_["sol"] = "sol-usd";
+    asset_to_exchange_name_["doge"] = "doge-usd";
+    asset_to_exchange_name_["ada"] = "ada-usd";
 }
 
 std::optional<std::string> Coinbase::ReturnRequest(const std::string &url) {
@@ -137,8 +142,12 @@ std::optional<Orderbook_State> Coinbase::ReturnCurrentOrderbook(const std::strin
     }
 }
 
-std::string Coinbase::get_asset_name_conversion(const std::string &name) {
-    return asset_to_exchange_name_[name];
+std::optional<std::string> Coinbase::get_asset_name_conversion(const std::string &name) {
+    if (asset_to_exchange_name_.count(name) != 0) {
+        return asset_to_exchange_name_[name];
+    }
+
+    return std::nullopt;
 }
 
 std::string Coinbase::get_name() {

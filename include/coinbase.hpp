@@ -23,7 +23,7 @@ public:
 
     std::optional<Orderbook_State> ReturnCurrentOrderbook(const std::string &ticker, int max_levels) override;
 
-    std::string get_asset_name_conversion(const std::string &name) override;
+    std::optional<std::string> get_asset_name_conversion(const std::string &name) override;
 
     std::string get_name() override;
 

@@ -12,7 +12,7 @@ concept HasRequiredMethods = requires(T t, const std::string &url, const std::st
     { t.ReturnBBO(ticker) } -> std::same_as<std::optional<BBO>>;
     { t.ReturnLastTrade(ticker) } -> std::same_as<std::optional<Latest_Trade>>;
     { t.ReturnCurrentOrderbook(ticker, max_levels) } -> std::same_as<std::optional<Orderbook_State>>;
-    { t.get_asset_name_conversion(asset_name) } -> std::same_as<std::string>;
+    { t.get_asset_name_conversion(asset_name) } -> std::same_as<std::optional<std::string>>;
     { t.get_name() } -> std::same_as<std::string>;
 };
 

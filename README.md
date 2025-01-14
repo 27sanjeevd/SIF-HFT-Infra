@@ -40,7 +40,7 @@ bids, asks = connection.get_best_book("eth", 5)
 
 
 ## Supported Currency List
-- ETH
+ETH, BTC, XRP, SOL, DOGE, ADA
 
 
 ## Rate Limits

@@ -21,11 +21,9 @@ public:
 
     int ProcessRequest(const char* request, int client_socket);
 
-    Orderbook_State GetTopNLevels(const std::string &ticker, int n);
+    std::optional<Orderbook_State> GetTopNLevels(const std::string &ticker, int n);
 
-    std::pair<std::string, std::string> FindBestBBOExchange(const std::string &ticker);
-
-    BBO GetBestBBO(const std::string &ticker);
+    std::optional<BBO> GetBestBBO(const std::string &ticker);
 
 private:
     int server_fd_ = -1;

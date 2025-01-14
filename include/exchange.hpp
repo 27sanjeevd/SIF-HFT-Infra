@@ -17,7 +17,7 @@ public:
 
     virtual std::optional<Orderbook_State> ReturnCurrentOrderbook(const std::string &ticker, int max_levels) = 0;
 
-    virtual std::string get_asset_name_conversion(const std::string &name)  = 0;
+    virtual std::optional<std::string> get_asset_name_conversion(const std::string &name)  = 0;
 
     virtual std::string get_name() = 0;
 };
