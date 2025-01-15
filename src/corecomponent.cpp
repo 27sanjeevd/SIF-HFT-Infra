@@ -12,8 +12,9 @@
 
 static constexpr int kPort = 8080;
 
-CoreComponent::CoreComponent(std::unordered_map<std::string, Exchange*> &&map,
-    std::vector<std::string> &&list) : exchange_map_(std::move(map)), exchange_list_(std::move(list)) {}
+CoreComponent::CoreComponent(std::unordered_map<uint32_t, std::string> &&id_map, 
+    std::unordered_map<std::string, Exchange*> &&ptr_map, std::vector<std::string> &&list) : 
+        exchange_id_to_name_(std::move(id_map)), exchange_map_(std::move(ptr_map)), exchange_list_(std::move(list)) {}
 
 
 
@@ -125,6 +126,9 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
     }
     else if (message_descriptor == "best_book") {
         CoreComponent::SendBestBook(request, client_socket);
+    }
+    else if (message_descriptor == "last_trade") {
+        CoreComponent::SendLatestTrade(request, client_socket);
     }
 
     return 0;
@@ -328,4 +332,8 @@ void CoreComponent::SendBestBook(const char* request, int client_socket) {
     }
 
     send(client_socket, message, sizeof(message), 0);
+}
+
+void CoreComponent::SendLatestTrade(const char* request, int client_socket) {
+    
 }

@@ -11,6 +11,9 @@ class CryptoConnection:
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        self.exchange_id = {}
+        self.exchange_id["coinbase"] = 0
+
     def connect(self):
 
         self.socket.connect((self.host, self.port))
@@ -61,6 +64,8 @@ class CryptoConnection:
 
         return bids, asks
 
+    def get_latest_trades(self, currency, exchange, num_trades):
+        pass
 
     def __del__(self):
         self.socket.close()

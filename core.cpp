@@ -19,17 +19,21 @@ concept HasRequiredMethods = requires(T t, const std::string &url, const std::st
 int main() {
     // Static assert all the connectivity classes
     static_assert(HasRequiredMethods<Coinbase>, "Coinbase does not satisfy the required methods");
+    uint32_t exchange_counter = 0;
 
     Coinbase coinbase;
 
-    std::unordered_map<std::string, Exchange*> exchange_map;
+    std::unordered_map<uint32_t, std::string> exchange_id_map;
+    std::unordered_map<std::string, Exchange*> exchange_ptr_map;
     std::vector<std::string> exchange_list;
 
-    exchange_map[coinbase.get_name()] = &coinbase;
+    exchange_id_map[exchange_counter++] = coinbase.get_name();
+    exchange_ptr_map[coinbase.get_name()] = &coinbase;
     exchange_list.push_back(coinbase.get_name());
 
 
-    CoreComponent cc(std::move(exchange_map), std::move(exchange_list));
+    CoreComponent cc(std::move(exchange_id_map), std::move(exchange_ptr_map), 
+        std::move(exchange_list));
     cc.Run();
 
     return 0;

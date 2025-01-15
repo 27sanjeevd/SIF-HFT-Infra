@@ -11,7 +11,8 @@
 
 class CoreComponent {
 public:
-    CoreComponent(std::unordered_map<std::string, Exchange*> &&map, std::vector<std::string> &&list);
+    CoreComponent(std::unordered_map<uint32_t, std::string> &&id_map, 
+        std::unordered_map<std::string, Exchange*> &&ptr_map, std::vector<std::string> &&list);
 
     void Run();
 
@@ -28,6 +29,7 @@ public:
 private:
     int server_fd_ = -1;
 
+    std::unordered_map<uint32_t, std::string> exchange_id_to_name_;
     std::unordered_map<std::string, Exchange*> exchange_map_;
     std::vector<std::string> exchange_list_;
 
@@ -36,6 +38,8 @@ private:
     void SendBestBBO(const char* request, int client_socket);
 
     void SendBestBook(const char* request, int client_socket);
+
+    void SendLatestTrade(const char* request, int client_socket);
 };
 
 #endif // CORECOMPONENT_HPP
