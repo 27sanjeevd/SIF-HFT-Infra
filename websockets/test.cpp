@@ -8,6 +8,7 @@
 #include <simdjson.h>
 #include <iostream>
 #include <string>
+#include <string_view>
 
 #include <chrono>
 
@@ -22,6 +23,12 @@ namespace net = boost::asio;
 namespace ssl = boost::asio::ssl;
 using tcp = boost::asio::ip::tcp;
 
+struct OrderUpdate {
+    std::string_view side;
+    double price_level;
+    double new_quantity;
+};
+
 class CoinbaseAdvancedTradeWS {
  private:
   net::io_context ioc_;
@@ -32,10 +39,45 @@ class CoinbaseAdvancedTradeWS {
 
   Orderbook curr_book_;
 
+
   uint64_t update_counter_ = 0;
   std::chrono::high_resolution_clock::time_point start_;
 
   uint64_t time_diff_count_ = 0;
+
+
+    std::vector<OrderUpdate> parse_updates(const char* data, size_t len) {
+        std::vector<std::string_view> updates;
+
+        
+    }
+
+    void HandleMessages(const char* input_message, size_t len) {
+        std::vector<OrderUpdate> results = parse_updates(input_message, len);
+
+        for (auto& result : results) {
+            start_ = high_resolution_clock::now();
+
+            if (result.side == "bid") {
+                curr_book_.update_bid(result.price_level, result.new_quantity);
+            }
+            else {
+                curr_book_.update_ask(result.price_level, result.new_quantity);
+            }
+
+            update_counter_++;
+            std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+            std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start_);
+
+            time_diff_count_ += static_cast<uint64_t>(duration.count());
+            if (update_counter_ % 1000 == 0) {
+                std::cout << "Order: " << update_counter_ << " taking avg time: " << time_diff_count_ / update_counter_ << "\n";
+            }
+        }
+    }
+
+
+
 
   void HandleMessage(const std::string& message) {
     try {
@@ -57,7 +99,7 @@ class CoinbaseAdvancedTradeWS {
         if (event["type"].get(type) == simdjson::SUCCESS) {
           //std::cout << "Event Type: " << type << std::endl;
 
-          if (type == "snapshot" || type == "update") {
+          if (type == "update") {
             //std::cout << "Processing " << type << " event" << std::endl;
 
             std::string_view product_id;
@@ -88,6 +130,8 @@ class CoinbaseAdvancedTradeWS {
                     }
                 }
                 else {
+                    start_ = high_resolution_clock::now();
+
                     if (side == "bid") {
                         curr_book_.update_bid(price, volume);
                     }
@@ -100,7 +144,9 @@ class CoinbaseAdvancedTradeWS {
                     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start_);
 
                     time_diff_count_ += static_cast<uint64_t>(duration.count());
-                    std::cout << "Order: " << update_counter_ << " taking avg time: " << time_diff_count_ / update_counter_ << "\n";
+                    if (update_counter_ % 1000 == 0) {
+                        std::cout << "Order: " << update_counter_ << " taking avg time: " << time_diff_count_ / update_counter_ << "\n";
+                    }
                 }
 
                 /*
@@ -149,11 +195,15 @@ class CoinbaseAdvancedTradeWS {
       beast::flat_buffer buffer;
 
       while (true) {
-        
-        start_ = high_resolution_clock::now();
+
         ws_.read(buffer);
-        std::string message(static_cast<const char*>(buffer.data().data()), buffer.data().size());
-        HandleMessage(message);
+
+        const char* input_data = static_cast<const char*>(buffer.data().data());
+        size_t len = buffer.data().size();
+
+        HandleMessages(input_data, len);
+        //std::string message(static_cast<const char*>(buffer.data().data()), buffer.data().size());
+        //HandleMessage(message);
         buffer.consume(buffer.size());
       }
     } 

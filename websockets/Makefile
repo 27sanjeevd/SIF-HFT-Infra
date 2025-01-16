@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = clang++
-CXXFLAGS = -std=c++17 -I../include -I/opt/homebrew/include -I/opt/homebrew/opt/openssl/include -pthread
+CXXFLAGS = -std=c++20 -I../include -I/opt/homebrew/include -I/opt/homebrew/opt/openssl/include -pthread
 
 # Directories
 SRC_DIR = ../src

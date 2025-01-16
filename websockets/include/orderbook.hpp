@@ -5,7 +5,10 @@
 
 #include <vector>
 #include <map>
+#include <unordered_set>
 #include <algorithm>
+#include <limits>
+#include <iostream>
 
 #include "../../include/data.hpp"
 
@@ -19,12 +22,18 @@ private:
     std::map<double, double, std::greater<double>> remaining_bids_;
     std::map<double, double> remaining_asks_;
 
+    std::unordered_set<double> bids_;
+    std::unordered_set<double> asks_;
+
+    double worst_bid_ = std::numeric_limits<double>::lowest();
+    double worst_ask_ = std::numeric_limits<double>::max();
+
     template <typename T>
-    void rebalance(std::vector<Price_Level>& top, T& remaining);
+    void rebalance(std::vector<Price_Level>& top, T& remaining, std::unordered_set<double> price_check);
 
     template <typename T>
     void add_level(double price, double volume, std::vector<Price_Level>& top, T& remaining, 
-                  bool is_bid);
+                  bool is_bid, std::unordered_set<double> price_check);
 
     template <typename T>
     void update_level(double price, double new_volume, std::vector<Price_Level>& top, T& remaining,
@@ -34,6 +43,8 @@ private:
     void delete_level(double price, std::vector<Price_Level>& top, T& remaining);
 
 public:
+    Orderbook();
+
     void add_bid(double price, double volume);
 
     void add_ask(double price, double volume);
@@ -45,10 +56,6 @@ public:
     void delete_bid(double price);
 
     void delete_ask(double price);
-    
-    const std::vector<Price_Level>& get_top_bids() const;
-
-    const std::vector<Price_Level>& get_top_asks() const;
 };
 
 #endif  // ORDERBOOK_HPP
