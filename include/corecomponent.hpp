@@ -4,7 +4,7 @@
 #define CORECOMPONENT_HPP
 
 #include "data.hpp"
-#include "../include/exchange.hpp"
+#include "exchange.hpp"
 
 #include <vector>
 #include <unordered_map>

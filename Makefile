@@ -1,5 +1,6 @@
 CXX = clang++
 CXXFLAGS = -std=c++20 -I./include
+
 LIBS = -lcurl
 
 OBJS = build/core.o build/coinbase.o build/simdjson.o build/corecomponent.o

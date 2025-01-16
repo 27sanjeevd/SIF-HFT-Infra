@@ -1,5 +1,5 @@
 #include "../include/coinbase.hpp"
-#include "simdjson.h"
+#include "../include/simdjson.h"
 
 #include <iostream>
 #include <regex>

@@ -4,7 +4,7 @@
 #define COINBASE_HPP
 
 #include "data.hpp"
-#include "../include/exchange.hpp"
+#include "exchange.hpp"
 
 #include <curl/curl.h>
 #include <optional>

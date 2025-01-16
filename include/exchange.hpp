@@ -3,7 +3,10 @@
 #ifndef EXCHANGE_HPP
 #define EXCHANGE_HPP
 
+#include "data.hpp"
+
 #include <string>
+#include <optional>
 
 class Exchange {
 public:
