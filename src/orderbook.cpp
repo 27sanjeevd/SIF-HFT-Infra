@@ -14,7 +14,8 @@ void Orderbook::rebalance(T& orders_map) {
 template <typename T>
 void Orderbook::update_level(const std::string& exchange_id, double price, double new_volume,
                     T& orders_map, ExchangeOrderMap& exchanges) {
-
+    
+    
     if (new_volume > 0) {
         exchanges[exchange_id][price] = new_volume;
     } 
@@ -31,6 +32,15 @@ void Orderbook::update_level(const std::string& exchange_id, double price, doubl
     else {
         orders_map.erase(price);
     }
+    /*
+
+    if (new_volume == 0) {
+        delete_level(exchange_id, price, orders_map, exchanges);
+    }
+    else {
+        orders_map[price] = new_volume;
+    }
+    */
 
     rebalance(orders_map);
 }
@@ -38,6 +48,7 @@ void Orderbook::update_level(const std::string& exchange_id, double price, doubl
 template <typename T>
 void Orderbook::delete_level(const std::string& exchange_id, double price,
                     T& orders_map, ExchangeOrderMap& exchanges) {
+    
     
     if (exchanges.count(exchange_id) != 0) {
         exchanges[exchange_id].erase(price);
@@ -51,6 +62,9 @@ void Orderbook::delete_level(const std::string& exchange_id, double price,
     else {
         orders_map.erase(price);
     }
+    
+
+    //orders_map.erase(price);
 }
 
 double Orderbook::get_total_volume_at_price(double price, const ExchangeOrderMap& exchanges) const {

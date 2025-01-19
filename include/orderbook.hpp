@@ -17,7 +17,7 @@ class Orderbook {
 private:
     using ExchangeOrderMap = std::unordered_map<std::string, std::unordered_map<double, double>>;
 
-    static constexpr size_t MAX_LEVELS = 100;
+    static constexpr size_t MAX_LEVELS = 10000;
     static constexpr size_t TOP_LEVELS = 8;
 
     std::map<double, double, std::greater<double>> bids_;

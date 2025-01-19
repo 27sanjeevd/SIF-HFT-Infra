@@ -70,9 +70,6 @@ void WebsocketConnection::Disconnect() {
 }
 
 void WebsocketConnection::HandleMessage(const std::string& message) {
-    uint32_t bid_count = curr_book_.get_max_levels();
-    uint32_t ask_count = curr_book_.get_max_levels();
-
     try {
         simdjson::padded_string padded_message{message};
         auto doc = json_parser_.iterate(padded_message);
@@ -100,20 +97,14 @@ void WebsocketConnection::HandleMessage(const std::string& message) {
                 if (!success) {
                     continue;
                 }
-                
-                if ((side == "bid" && bid_count == 0) || 
-                    (side == "offer" && ask_count == 0)) {
-                    continue;
-                }
 
                 double price = std::stod(std::string(price_level));
                 double volume = std::stod(std::string(new_quantity));
 
                 if (side == "bid") {
-                    bid_count--;
                     curr_book_.update_bid(id_, price, volume);
-                } else {
-                    ask_count--;
+                } 
+                else {
                     curr_book_.update_ask(id_, price, volume);
                 }
             }
