@@ -1,4 +1,5 @@
 #include "../include/corecomponent.hpp"
+#include "../include/websocket.hpp"
 
 #include <thread>
 #include <sys/socket.h>
@@ -19,9 +20,19 @@ CoreComponent::CoreComponent(std::unordered_map<uint32_t, std::string> &&id_map,
 
 
 void CoreComponent::Run() {
-    std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
+    //std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
 
-    listeningThread.join();
+    //listeningThread.join();
+    
+    Orderbook new_book;
+    std::string new_id = "id";
+
+    WebsocketConnection new_ws(new_book, new_id);
+
+    std::string currency = "BTC-USD";
+    std::string channel = "level2";
+
+    new_ws.Connect(currency, channel);
 }
 
 

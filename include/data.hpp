@@ -27,4 +27,10 @@ struct Orderbook_State {
     std::vector<std::tuple<double, double, uint64_t>> asks; 
 };
 
+struct OrderUpdate {
+    std::string_view side;
+    double price_level;
+    double new_quantity;
+};
+
 #endif // DATA_HPP

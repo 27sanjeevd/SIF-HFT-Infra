@@ -11,8 +11,6 @@ __pycache__/
 core
 
 build/
-websockets/bin/
-websockets/obj/
 
 # Other common ignores (optional)
 *.log           # Log files
