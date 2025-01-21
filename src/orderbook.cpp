@@ -32,15 +32,6 @@ void Orderbook::update_level(const std::string& exchange_id, double price, doubl
     else {
         orders_map.erase(price);
     }
-    /*
-
-    if (new_volume == 0) {
-        delete_level(exchange_id, price, orders_map, exchanges);
-    }
-    else {
-        orders_map[price] = new_volume;
-    }
-    */
 
     rebalance(orders_map);
 }
@@ -62,9 +53,6 @@ void Orderbook::delete_level(const std::string& exchange_id, double price,
     else {
         orders_map.erase(price);
     }
-    
-
-    //orders_map.erase(price);
 }
 
 double Orderbook::get_total_volume_at_price(double price, const ExchangeOrderMap& exchanges) const {
@@ -93,10 +81,10 @@ void Orderbook::update_ask(const std::string &exchange_id, double price, double 
 void Orderbook::print_bbo() {
 
     if (bids_.size() > 0) {
-        std::cout << "Bid: " << std::fixed << std::setprecision(2) << bids_.begin()->first << " ";
+        std::cout << "Bid: " << std::fixed << std::setprecision(4) << bids_.begin()->first << " ";
     }
     if (asks_.size() > 0) {
-        std::cout << "Ask: " << std::fixed << std::setprecision(2) << asks_.begin()->first;
+        std::cout << "Ask: " << std::fixed << std::setprecision(4) << asks_.begin()->first;
     }
 
     std::cout << "\n";

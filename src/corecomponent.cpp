@@ -1,5 +1,6 @@
 #include "../include/corecomponent.hpp"
 #include "../include/websocket.hpp"
+#include "../include/websockets/coinbase_ws.hpp"
 
 #include <thread>
 #include <sys/socket.h>
@@ -23,11 +24,12 @@ void CoreComponent::Run() {
     //std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
 
     //listeningThread.join();
+
     
     Orderbook new_book;
     std::string new_id = "id";
 
-    WebsocketConnection new_ws(new_book, new_id);
+    Coinbase_WS new_ws(new_book, new_id);
 
     std::string currency = "BTC-USD";
     std::string channel = "level2";

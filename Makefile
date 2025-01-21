@@ -3,39 +3,30 @@ CXXFLAGS = -std=c++20 -I./include -I/opt/homebrew/include -I/opt/homebrew/opt/op
 LDFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/opt/openssl/lib
 LDLIBS = -lssl -lcrypto -lboost_system -lboost_json -lcurl
 
-# Source files
 SOURCES = core.cpp \
           src/coinbase.cpp \
           src/simdjson.cpp \
           src/corecomponent.cpp \
+          src/websockets/coinbase_ws.cpp \
           src/websocket.cpp \
           src/orderbook.cpp
 
-# Object files (all in build/)
-OBJS = $(patsubst %.cpp,build/%.o,$(notdir $(SOURCES)))
-
-# Main target
-all: core
+OBJECTS = $(patsubst %.cpp,build/%.o,$(SOURCES))
+DEPS = $(OBJECTS:.o=.d)
 
 .PHONY: all clean
 
-# Create build directory
-build:
-	mkdir -p build
+all: core
 
-# Pattern rule for object files in root directory
-build/%.o: %.cpp | build
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+build/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-# Pattern rule for object files from src directory
-build/%.o: src/%.cpp | build
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+core: $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $@
 
-# Main target linking
-core: $(OBJS)
-	$(CXX) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
-
-# Clean target
 clean:
 	rm -f core
 	rm -rf build
+
+-include $(DEPS)

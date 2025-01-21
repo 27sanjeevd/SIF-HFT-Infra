@@ -30,11 +30,13 @@ class WebsocketConnection {
 public:
     WebsocketConnection(Orderbook &new_book, std::string &ws_id);
 
+    void Initialize();
+
     void Connect(std::string &currency_name, std::string &channel_name);
 
     void EstablishConnection();
 
-    void SubscribeToChannel(std::string &currency_name, std::string &channel_name);
+    virtual void SubscribeToChannel(std::string &currency_name, std::string &channel_name) = 0;
 
     void StartMessageLoop();
 
@@ -42,20 +44,19 @@ public:
 
     void Disconnect();
 
-private:
-    void HandleMessage(const std::string& message);
+protected:
+    virtual void HandleMessage(const std::string& message) = 0;
+
+    virtual std::string GetHost() const = 0;
 
     net::io_context ioc_;
     ssl::context ctx_{ssl::context::tlsv12_client};
     websocket::stream<beast::ssl_stream<tcp::socket>> ws_{ioc_, ctx_};
-    const std::string host_ = "advanced-trade-ws.coinbase.com";
     simdjson::ondemand::parser json_parser_;
     Orderbook curr_book_;
 
-    uint64_t func_time_total_ = 0;
-    uint64_t func_calls_ = 0;
-
     std::string id_;
+    //const std::string host_ = "advanced-trade-ws.coinbase.com";
 };
 
 #endif // WEBSOCKET_HPP
