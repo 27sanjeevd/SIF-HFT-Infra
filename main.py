@@ -6,14 +6,15 @@ if __name__ == "__main__":
     connection = CryptoConnection()
     connection.connect()
 
-    result = connection.get_bbo("eth")
-    print(result)
+    connection.subscribe("ETH")
 
-    result = connection.get_bbo("do")
-    print(result)
+    for x in range(10):
+        connection.parse("ETH")
 
-    result = connection.get_best_book("eth", 5)
-    print(result)
+        time.sleep(1)
 
-    result = connection.get_best_book("do", 5)
-    print(result)
+    connection.unsubscribe("ETH")
+
+    time.sleep(5)
+
+    connection.cleanup()

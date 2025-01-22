@@ -53,10 +53,9 @@ protected:
     ssl::context ctx_{ssl::context::tlsv12_client};
     websocket::stream<beast::ssl_stream<tcp::socket>> ws_{ioc_, ctx_};
     simdjson::ondemand::parser json_parser_;
-    Orderbook curr_book_;
+    Orderbook& curr_book_;
 
     std::string id_;
-    //const std::string host_ = "advanced-trade-ws.coinbase.com";
 };
 
 #endif // WEBSOCKET_HPP

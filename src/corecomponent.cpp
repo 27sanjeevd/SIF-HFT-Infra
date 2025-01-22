@@ -1,6 +1,5 @@
 #include "../include/corecomponent.hpp"
 #include "../include/websocket.hpp"
-#include "../include/websockets/coinbase_ws.hpp"
 
 #include <thread>
 #include <sys/socket.h>
@@ -21,20 +20,18 @@ CoreComponent::CoreComponent(std::unordered_map<uint32_t, std::string> &&id_map,
 
 
 void CoreComponent::Run() {
-    //std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
+    std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
 
-    //listeningThread.join();
-
-    
-    Orderbook new_book;
     std::string new_id = "id";
 
-    Coinbase_WS new_ws(new_book, new_id);
+    Coinbase_WS new_ws(std::ref(curr_book_), new_id);
 
     std::string currency = "BTC-USD";
     std::string channel = "level2";
 
     new_ws.Connect(currency, channel);
+
+    listeningThread.join();
 }
 
 
@@ -114,7 +111,7 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 
         int return_code = ProcessRequest(socket_buffer, client_socket);
 
-        if (return_code == -1) {
+        if (return_code == 0) {
             std::cout << "Closed connection\n";
             break;
         }
@@ -126,25 +123,37 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 
 
 int CoreComponent::ProcessRequest(const char* request, int client_socket) {
-    char descriptor[17] = {0};
-    std::memcpy(descriptor, request + 4, 16);
-    std::string message_descriptor = std::string(descriptor);
+    uint32_t msg_type = 0;
+    std::memcpy(&msg_type, request, sizeof(uint32_t));
+
+    msg_type = OSSwapHostToBigInt32(msg_type);
+
+    if (msg_type == 0) {
+        std::cout << "exit\n";
+        curr_book_.remove_client(client_socket);
+    }
+    else if (msg_type == 1) {
+        std::cout << "--------------\n";
+        curr_book_.add_client(client_socket);
+    }
 
 
+    /*
     if (message_descriptor == "exit") {
         return -1;
     }
     else if (message_descriptor == "best_bbo") {
         CoreComponent::SendBestBBO(request, client_socket);
-    }
+    }   
     else if (message_descriptor == "best_book") {
         CoreComponent::SendBestBook(request, client_socket);
     }
     else if (message_descriptor == "last_trade") {
         CoreComponent::SendLatestTrade(request, client_socket);
     }
+    */
 
-    return 0;
+    return msg_type;
 }
 
 

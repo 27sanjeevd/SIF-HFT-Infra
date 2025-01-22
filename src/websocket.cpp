@@ -58,9 +58,3 @@ void WebsocketConnection::Disconnect() {
         std::cerr << "Error closing connection: " << e.what() << std::endl;
     }
 }
-
-/*
-const std::string WebsocketConnection::GetHost() {
-    return host_;
-}
-*/

@@ -5,6 +5,7 @@
 
 #include "data.hpp"
 #include "exchange.hpp"
+#include "websockets/coinbase_ws.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -32,6 +33,8 @@ private:
     std::unordered_map<uint32_t, std::string> exchange_id_to_name_;
     std::unordered_map<std::string, Exchange*> exchange_map_;
     std::vector<std::string> exchange_list_;
+
+    Orderbook curr_book_;
 
     void ToNetworkOrder(double value, char* buffer);
 

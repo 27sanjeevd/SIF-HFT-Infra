@@ -1,5 +1,8 @@
 #include "../include/orderbook.hpp"
 
+#include <sys/socket.h>
+#include <libkern/OSByteOrder.h>
+
 Orderbook::Orderbook() {}
 
 template <typename T>
@@ -66,16 +69,77 @@ double Orderbook::get_total_volume_at_price(double price, const ExchangeOrderMap
     return total_volume;
 }
 
+void Orderbook::send_snapshot() {
+    if (top_levels_updated_ || bids_.size() == 0 || asks_.size() == 0 || client_send_list_.size() == 0) {
+        return; 
+    }
+    
+    top_levels_updated_ = true;
+    
+    char buffer[36];
+
+    uint32_t remainingSize = 32;
+    double bestBidPrice = bids_.begin()->first;
+    double bestBidVolume = bids_.begin()->second;
+    double bestAskPrice = asks_.begin()->first;
+    double bestAskVolume = asks_.begin()->second;
+
+    remainingSize = OSSwapHostToBigInt32(remainingSize);
+    std::memcpy(buffer, &remainingSize, 4);
+
+    ToNetworkOrder(bestBidPrice, buffer + 4);
+    ToNetworkOrder(bestBidVolume, buffer + 12);
+    ToNetworkOrder(bestAskPrice, buffer + 20);
+    ToNetworkOrder(bestAskVolume, buffer + 28);
+
+    
+    for (auto client_socket : client_send_list_) {
+        send(client_socket, buffer, sizeof(buffer), 0);
+    }
+}
+
+void Orderbook::ToNetworkOrder(double value, char* buffer) {
+    uint64_t raw;
+    std::memcpy(&raw, &value, sizeof(raw));
+    raw = OSSwapHostToBigInt64(raw);
+    std::memcpy(buffer, &raw, sizeof(raw));
+}
+
+template <typename T, typename Compare>
+bool Orderbook::IsInFirstNKeys(T& orders_map, double price, Compare comp) {
+    if (orders_map.size() < TOP_LEVELS) {
+        return true;
+    }
+
+    typename T::const_iterator it = orders_map.begin();
+    std::advance(it, TOP_LEVELS - 1);
+
+    if (comp(price, it->first)) {
+        return true;
+    }
+
+    return false;
+}
 
 
 void Orderbook::update_bid(const std::string &exchange_id, double price, double new_volume) {
     update_level(exchange_id, price, new_volume, bids_, exchange_bids_);
-    print_bbo();
+    //print_bbo();
+
+    if (IsInFirstNKeys(bids_, price, std::greater<double>())) {
+        top_levels_updated_ = false;
+    }
+    send_snapshot();
 }
 
 void Orderbook::update_ask(const std::string &exchange_id, double price, double new_volume) {
     update_level(exchange_id, price, new_volume, asks_, exchange_asks_);
-    print_bbo();
+    //print_bbo();
+
+    if (IsInFirstNKeys(asks_, price, std::less<double>())) {
+        top_levels_updated_ = false;
+    }
+    send_snapshot();
 }
 
 void Orderbook::print_bbo() {
@@ -121,4 +185,21 @@ double Orderbook::get_exchange_ask_volume(const std::string& exchange_id, double
 void Orderbook::initialize_exchange(const std::string& exchange_id) {
     exchange_bids_[exchange_id];
     exchange_asks_[exchange_id];
+}
+
+void Orderbook::add_client(int client_socket) {
+    if (std::find(client_send_list_.begin(), client_send_list_.end(), client_socket) == client_send_list_.end()) {
+        client_send_list_.push_back(client_socket);
+    }
+}
+
+void Orderbook::remove_client(int client_socket) {
+    auto it = std::find(client_send_list_.begin(), client_send_list_.end(), client_socket);
+
+    if (it != client_send_list_.end()) {
+        client_send_list_.erase(it);
+    } 
+    else {
+        std::cout << "Number not found in the vector.\n";
+    }
 }
