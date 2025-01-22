@@ -10,40 +10,34 @@ make core
 After doing so, run `./core` on one terminal process to have a live running backend component. The python component is called `CryptoConnection` in a file called `client.py`. Read the below to see the guide on how to use the client class.
 
 ## Client
-The client class is able to connect to the core backend through ipc sockets. Here's example python code showcase utilizing the class. 
+The client class is able to connect to the core backend through IPC sockets. Here's example python code showcasing using the class. 
 
 ```
 connection = CryptoConnection()
 connection.connect()
 
-best_bid, best_ask = connection.get_bbo("eth")
+connection.subscribe("ETH")
 
-bids, asks = connection.get_best_book("eth", 5)
+time.sleep(5)
+data = connection.parse("ETH")
+
+connection.cleanup()
 ```
 
 You can view an example file directly with `main.py`.
 
-### Supported Requests
-`.get_bbo(currency)`: calling this returns a pair of doubles representing the best bid and best ask amongst all the exchanges supported.
-```
-best_bid, best_ask = connection.get_bbo("eth")
-```
+### Client Logic
+When subscribing to a ticker, it tells the server that it can start sending snapshots of the current orderbook of that ticker to the client. To avoid spam, it only sends a snapshot when one of the top 10 levels has been updated.
 
-`.get_best_book(currency, num_levels)`: calling this returns the coalesced best book amongst the supported exchanges, up to n levels. Returns a pair of lists, each holding a tuple representing each level. The value in the tuple take the form `(Price, Volume, Num Orders)`.
-```
-bids, asks = connection.get_best_book("eth", 5)
-```
+Receiving and decoding the snapshots happens lazily. The client runs an asynchronous background task monitoring the socket, and blocks to receive only when it has data it can grab. Without being parsed, the snapshot is stored in a data buffer representing the most recent snapshot for that ticker.
 
+Only once the client explicitly calls the `.parse(ticker)` method does the client decode the snapshot stored in the buffer and returns the data. This way, unnecessary computation isn't being spent decoding snapshots that get immediately overwritten when newer data comes in, and ensures the client has access to the most recent snapshot received when it requests that data.
+
+If there is no snapshot available when `parse` is called, then the method returns `None`.
 
 ## Supported Exchange List (Receiving Data, Sending Orders):
 - Coinbase (✅, ❌)
 
 
 ## Supported Currency List
-ETH, BTC, XRP, SOL, DOGE, ADA
-
-
-## Rate Limits
-Note the rate limits for all the supported exchanges.
-
-Coinbase Data: 10 requests per second
+ETH (default)
