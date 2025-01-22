@@ -1,6 +1,7 @@
 from client import CryptoConnection
 
 import time
+from datetime import datetime
 
 if __name__ == "__main__":
     connection = CryptoConnection()
@@ -8,13 +9,12 @@ if __name__ == "__main__":
 
     connection.subscribe("ETH")
 
-    for x in range(10):
+    for x in range(30):
+        print(datetime.now())
         data = connection.parse("ETH")
 
-        time.sleep(1)
+        time.sleep(1.5)
 
     connection.unsubscribe("ETH")
-
-    time.sleep(5)
 
     connection.cleanup()
