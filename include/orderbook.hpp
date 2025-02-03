@@ -50,7 +50,7 @@ private:
     bool IsInFirstNKeys(T& orders_map, double price, Compare comp);
 
 public:
-    Orderbook();
+    Orderbook() = default;
 
     void update_bid(const std::string &exchange_id, double price, double new_volume);
     void update_ask(const std::string &exchange_id, double price, double new_volume);

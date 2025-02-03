@@ -1,7 +1,13 @@
 #include "../../include/websockets/coinbase_ws.hpp"
 
-Coinbase_WS::Coinbase_WS(Orderbook &new_book, std::string &ws_id) : WebsocketConnection(new_book, ws_id) {
+Coinbase_WS::Coinbase_WS(std::shared_ptr<Orderbook> new_book, std::string &ws_id) : WebsocketConnection(new_book, ws_id) {
     Initialize();
+
+    id_to_currency_[1] = "BTC-USD";
+    id_to_currency_[2] = "ETH-USD";
+    id_to_currency_[3] = "XRP-USD";
+    id_to_currency_[4] = "SOL-USD";
+    id_to_currency_[5] = "DOGE-USD";
 }
 
 void Coinbase_WS::SubscribeToChannel(std::string &currency_name, std::string &channel_name) {
@@ -14,6 +20,15 @@ void Coinbase_WS::SubscribeToChannel(std::string &currency_name, std::string &ch
     std::string msg = boost::json::serialize(subscribe_message);
     ws_.write(net::buffer(msg));
 }
+
+std::optional<std::string> Coinbase_WS::GetCurrencyName(uint32_t currency_id) {
+    if (id_to_currency_.contains(currency_id)) {
+        return id_to_currency_[currency_id];
+    }
+
+    return std::nullopt;
+}
+
 
 void Coinbase_WS::HandleMessage(const std::string& message) {
     try {
@@ -48,10 +63,10 @@ void Coinbase_WS::HandleMessage(const std::string& message) {
                 double volume = std::stod(std::string(new_quantity));
 
                 if (side == "bid") {
-                    curr_book_.update_bid(id_, price, volume);
+                    curr_book_->update_bid(id_, price, volume);
                 } 
                 else {
-                    curr_book_.update_ask(id_, price, volume);
+                    curr_book_->update_ask(id_, price, volume);
                 }
             }
         }

@@ -3,8 +3,6 @@
 #include <sys/socket.h>
 #include <libkern/OSByteOrder.h>
 
-Orderbook::Orderbook() {}
-
 template <typename T>
 void Orderbook::rebalance(T& orders_map) {
     

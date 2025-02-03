@@ -28,7 +28,7 @@ using tcp = boost::asio::ip::tcp;
 
 class WebsocketConnection {
 public:
-    WebsocketConnection(Orderbook &new_book, std::string &ws_id);
+    WebsocketConnection(std::shared_ptr<Orderbook> new_book, std::string &ws_id);
 
     void Initialize();
 
@@ -53,7 +53,7 @@ protected:
     ssl::context ctx_{ssl::context::tlsv12_client};
     websocket::stream<beast::ssl_stream<tcp::socket>> ws_{ioc_, ctx_};
     simdjson::ondemand::parser json_parser_;
-    Orderbook& curr_book_;
+    std::shared_ptr<Orderbook> curr_book_;
 
     std::string id_;
 };

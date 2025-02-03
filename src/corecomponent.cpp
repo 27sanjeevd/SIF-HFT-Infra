@@ -22,18 +22,8 @@ CoreComponent::CoreComponent(std::unordered_map<uint32_t, std::string> &&id_map,
 void CoreComponent::Run() {
     std::thread listeningThread(&CoreComponent::ReceiveConnections, this);
 
-    std::string new_id = "id";
-
-    Coinbase_WS new_ws(std::ref(curr_book_), new_id);
-
-    std::string currency = "BTC-USD";
-    std::string channel = "level2";
-
-    new_ws.Connect(currency, channel);
-
     listeningThread.join();
 }
-
 
 
 void CoreComponent::ReceiveConnections() {
@@ -88,6 +78,14 @@ void CoreComponent::ReceiveConnections() {
 }
 
 
+#pragma pack(1)
+struct ReceivedData {
+    bool continue_connection;
+    uint32_t currency_name;
+    uint32_t num_levels;
+};
+#pragma pack()
+
 
 void CoreComponent::ConnectionHandler(int client_socket) {
     std::cout << "in thread waiting for client\n";
@@ -109,9 +107,9 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 
         socket_buffer[bytes_received] = '\0';
 
-        int return_code = ProcessRequest(socket_buffer, client_socket);
+        bool return_code = ProcessRequest(socket_buffer, client_socket);
 
-        if (return_code == 0) {
+        if (!return_code) {
             std::cout << "Closed connection\n";
             break;
         }
@@ -123,239 +121,63 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 
 
 int CoreComponent::ProcessRequest(const char* request, int client_socket) {
-    uint32_t msg_type = 0;
-    std::memcpy(&msg_type, request, sizeof(uint32_t));
+    ReceivedData data;
 
-    msg_type = OSSwapHostToBigInt32(msg_type);
+    data.continue_connection = static_cast<bool>(request[0]);
 
-    if (msg_type == 0) {
+    if (!data.continue_connection) {
         std::cout << "exit\n";
-        curr_book_.remove_client(client_socket);
+        for (auto currency : client_subscribe_list_[client_socket]) {
+            open_orderbooks_[currency]->remove_client(client_socket);
+        }
     }
-    else if (msg_type == 1) {
-        std::cout << "--------------\n";
-        curr_book_.add_client(client_socket);
+    else {
+        std::memcpy(&data.currency_name, request + 1, sizeof(uint32_t));
+        data.currency_name = OSSwapHostToBigInt32(data.currency_name);
+
+        std::memcpy(&data.num_levels, request + 5, sizeof(uint32_t));
+        data.num_levels = OSSwapHostToBigInt32(data.num_levels);
+        
+        if (!open_orderbooks_.contains(data.currency_name)) {
+            AddWebsocketConnection(data.currency_name);
+        }
+        
+        open_orderbooks_[data.currency_name]->add_client(client_socket);
+        client_subscribe_list_[client_socket].push_back(data.currency_name);
     }
 
-
-    /*
-    if (message_descriptor == "exit") {
-        return -1;
-    }
-    else if (message_descriptor == "best_bbo") {
-        CoreComponent::SendBestBBO(request, client_socket);
-    }   
-    else if (message_descriptor == "best_book") {
-        CoreComponent::SendBestBook(request, client_socket);
-    }
-    else if (message_descriptor == "last_trade") {
-        CoreComponent::SendLatestTrade(request, client_socket);
-    }
-    */
-
-    return msg_type;
+    return data.continue_connection;
 }
 
+void CoreComponent::AddWebsocketConnection(int currency_id) {
 
+    auto new_orderbook = std::make_shared<Orderbook>();
+    open_orderbooks_[currency_id] = new_orderbook;
+    
+    auto thread_func = [this, currency_id, new_orderbook]() {
+        std::string new_id = "id";
 
-std::optional<Orderbook_State> CoreComponent::GetTopNLevels(const std::string &ticker, int n) {
-    Orderbook_State output;
+        Coinbase_WS ws(new_orderbook, new_id);
 
-    std::map<double, std::pair<double, uint64_t>> bids_map;
-    std::map<double, std::pair<double, uint64_t>> asks_map;
-
-    for (const std::string &exchange : exchange_list_) {
-        Exchange* exchange_ptr = exchange_map_[exchange];
-
-        auto name_conversion_opt = exchange_ptr->get_asset_name_conversion(ticker);
-        if (!name_conversion_opt.has_value()) [[unlikely]] {
-            return std::nullopt;
+        auto currency_name = ws.GetCurrencyName(currency_id);
+        if (!currency_name) {
+            return;
         }
 
-        auto orderbook_state = exchange_ptr->ReturnCurrentOrderbook(name_conversion_opt.value(), n);
-        if (!orderbook_state.has_value()) [[unlikely]] {
-            return std::nullopt;
-        }
+        std::string currency = *currency_name;
+        std::string channel = "level2";
 
-        if (orderbook_state) {
-            // dont need to duplicate code for bids vs asks
+        ws.Connect(currency, channel);
+    };
 
-            auto exchange_bids = (*orderbook_state).bids;
-
-            for (auto bid_tuple : exchange_bids) {
-                double bid_price = std::get<0>(bid_tuple);
-
-                bids_map[bid_price].first += std::get<1>(bid_tuple);
-                bids_map[bid_price].second += std::get<2>(bid_tuple);
-            }
-
-            auto exchange_asks = (*orderbook_state).asks;
-
-            for (auto ask_tuple : exchange_asks) {
-                double ask_price = std::get<0>(ask_tuple);
-
-                asks_map[ask_price].first += std::get<1>(ask_tuple);
-                asks_map[ask_price].second += std::get<2>(ask_tuple);
-            }
-        }
-    }
-
-    if (bids_map.size() > 0) {
-        int level_count = 0;
-        for (auto bid_map_iterator = bids_map.rbegin(); bid_map_iterator != bids_map.rend() && level_count < n; bid_map_iterator++, level_count++) {
-            double bid_price = bid_map_iterator->first;
-            auto value = bid_map_iterator->second;
-
-            output.bids.emplace_back(bid_price, value.first, value.second);
-        }
-
-        level_count = 0;
-        for (auto ask_map_iterator = asks_map.begin(); ask_map_iterator != asks_map.end() && level_count < n; ask_map_iterator++, level_count++) {
-            double bid_price = ask_map_iterator->first;
-            auto value = ask_map_iterator->second;
-
-            output.asks.emplace_back(bid_price, value.first, value.second);
-        }
-    }
-
-    return output;
+    std::thread ws_thread(thread_func);
+    ws_thread.detach();
 }
 
-// add error condition if the ticker isn't present in the get_asset_name_conversion map
-std::optional<BBO> CoreComponent::GetBestBBO(const std::string &ticker) {
-    double best_bid = std::numeric_limits<double>::lowest(), best_ask = std::numeric_limits<double>::max();
-
-    for (const auto &exchange : exchange_list_) {
-        Exchange* exchange_ptr = exchange_map_[exchange];
-
-        auto name_conversion_opt = exchange_ptr->get_asset_name_conversion(ticker);
-        if (!name_conversion_opt.has_value()) [[unlikely]] {
-            return std::nullopt;
-        }
-
-        auto BBO = exchange_ptr->ReturnBBO(name_conversion_opt.value());
-        if (!BBO.has_value()) [[unlikely]] {
-            return std::nullopt;
-        }
-
-        best_bid = std::max(best_bid, BBO->bid);
-        best_ask = std::min(best_ask, BBO->ask);
-    }
-
-    BBO output = { .bid = best_bid, .ask = best_ask };
-    return output;
-}
 
 void CoreComponent::ToNetworkOrder(double value, char* buffer) {
     uint64_t raw;
     std::memcpy(&raw, &value, sizeof(raw));
     raw = OSSwapHostToBigInt64(raw);
     std::memcpy(buffer, &raw, sizeof(raw));
-}
-
-void CoreComponent::SendBestBBO(const char* request, int client_socket) {
-    char asset[5] = {0};
-    std::memcpy(asset, request + 20, 4);
-    std::string asset_name = std::string(asset);
-
-    auto best_bbo_opt = CoreComponent::GetBestBBO(asset_name);
-    if (!best_bbo_opt.has_value()) [[unlikely]] {
-        uint32_t status = 0;
-        char message[4];
-
-        uint32_t network_status = OSSwapHostToBigInt32(status);
-        std::memcpy(message, &network_status, 4);
-
-        send(client_socket, message, 4, 0);
-        return;
-    }
-
-    BBO best_bbo = best_bbo_opt.value();
-
-    char message[24];
-    uint32_t message_size = 16;
-
-    uint32_t status = 1;
-    uint32_t network_status = OSSwapHostToBigInt32(status);
-    std::memcpy(message, &network_status, 4);
-
-    uint32_t network_size = OSSwapHostToBigInt32(message_size);
-    std::memcpy(message + 4, &network_size, 4);
-
-    ToNetworkOrder(best_bbo.bid, message + 8);
-
-    ToNetworkOrder(best_bbo.ask, message + 16);
-
-    send(client_socket, message, sizeof(message), 0);
-}
-
-
-
-void CoreComponent::SendBestBook(const char* request, int client_socket) {
-    char asset[5] = {0};
-    std::memcpy(asset, request + 20, 4);
-    std::string asset_name = std::string(asset);
-
-    char num_levels[5] = {0};
-    std::memcpy(num_levels, request + 24, 4);
-    uint32_t level_count = 0;
-
-    std::memcpy(&level_count, num_levels, sizeof(level_count));
-    level_count = OSSwapBigToHostInt32(level_count);
-
-    auto top_n_levels_opt = CoreComponent::GetTopNLevels(asset_name, level_count);
-    if (!top_n_levels_opt.has_value()) [[unlikely]] {
-        uint32_t status = 0;
-        char message[4];
-
-        uint32_t network_status = OSSwapHostToBigInt32(status);
-        std::memcpy(message, &network_status, 4);
-
-        send(client_socket, message, 4, 0);
-        return;
-    }
-    
-    Orderbook_State top_n_levels = top_n_levels_opt.value();
-
-    uint64_t space_used = 0;
-
-    char message[12 + level_count * 48];
-    uint32_t message_size = 4 + level_count * 48;
-
-    uint32_t status = 1;
-    uint32_t network_status = OSSwapHostToBigInt32(status);
-    std::memcpy(message + space_used, &network_status, 4);
-    space_used += 4;
-
-
-    uint32_t network_size = OSSwapHostToBigInt32(message_size);
-    std::memcpy(message + space_used, &network_size, 4);
-    space_used += 4;
-
-    uint32_t network_levels = OSSwapHostToBigInt32(level_count);
-    std::memcpy(message + space_used, &network_levels, 4);
-    space_used += 4;
-
-
-    for (auto x = 0; x < level_count; x++) {
-        ToNetworkOrder(std::get<0>(top_n_levels.bids[x]), message + space_used);
-        space_used += 8;
-        ToNetworkOrder(std::get<1>(top_n_levels.bids[x]), message + space_used);
-        space_used += 8;
-        ToNetworkOrder(std::get<2>(top_n_levels.bids[x]), message + space_used);
-        space_used += 8;
-
-        ToNetworkOrder(std::get<0>(top_n_levels.asks[x]), message + space_used);
-        space_used += 8;
-        ToNetworkOrder(std::get<1>(top_n_levels.asks[x]), message + space_used);
-        space_used += 8;
-        ToNetworkOrder(std::get<2>(top_n_levels.asks[x]), message + space_used);
-        space_used += 8;
-    }
-
-    send(client_socket, message, sizeof(message), 0);
-}
-
-void CoreComponent::SendLatestTrade(const char* request, int client_socket) {
-    
 }

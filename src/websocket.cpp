@@ -1,9 +1,9 @@
 #include "../include/websocket.hpp"
 
-WebsocketConnection::WebsocketConnection(Orderbook &new_book, std::string &ws_id) 
+WebsocketConnection::WebsocketConnection(std::shared_ptr<Orderbook> new_book, std::string &ws_id) 
     : curr_book_(new_book), id_(ws_id) {
 
-    curr_book_.initialize_exchange(id_);
+    curr_book_->initialize_exchange(id_);
 }
 
 void WebsocketConnection::Initialize() {

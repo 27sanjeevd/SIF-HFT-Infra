@@ -16,12 +16,11 @@ class CryptoConnection:
         self.host = host
         self.port = port
         self.exchanges = {"coinbase"}
-        self.running = False
         
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         self.exchange_id = {"coinbase": 0}
-        self.currency_id = {"ETH": 1}
+        self.currency_id = {"BTC": 1, "ETH": 2, "XRP": 3, "SOL": 4, "DOGE": 5}
         self.data = {}
 
     def connect(self):
@@ -35,7 +34,9 @@ class CryptoConnection:
             raise
     
     def unsubscribe(self, msg_type):
-        message = struct.pack("!I", 0)
+        continue_channel = False
+
+        message = struct.pack("!?", continue_channel)
         self.socket.sendall(message)
 
     def subscribe(self, msg_type):
@@ -49,8 +50,9 @@ class CryptoConnection:
         )
         server_thread.start()
 
-    def _listen(self, msg_type):
-        message = struct.pack("!I", self.currency_id[msg_type])
+    def _listen(self, msg_type, num_levels = 1):
+        continue_channel = True
+        message = struct.pack("!?II", continue_channel, self.currency_id[msg_type], num_levels)
         self.socket.sendall(message)
 
         while self.running:
@@ -83,18 +85,18 @@ class CryptoConnection:
         if not data:
             return None
         
-        if msg_type == "ETH":
-            values = struct.unpack("!dddd", data[:32])
-            market_data = MarketData(*values)
-            
-            print("Best Bid and Best Ask Information:")
-            print(f"Best Bid Price: {market_data.best_bid_price}")
-            print(f"Best Bid Volume: {market_data.best_bid_volume}")
-            print(f"Best Ask Price: {market_data.best_ask_price}")
-            print(f"Best Ask Volume: {market_data.best_ask_volume}")
-            print("------------")
-            
-            return market_data
+        #if msg_type == "BTC" or msg_type == "ETH":
+        values = struct.unpack("!dddd", data[:32])
+        market_data = MarketData(*values)
+        
+        print("Best Bid and Best Ask Information:")
+        print(f"Best Bid Price: {market_data.best_bid_price}")
+        print(f"Best Bid Volume: {market_data.best_bid_volume}")
+        print(f"Best Ask Price: {market_data.best_ask_price}")
+        print(f"Best Ask Volume: {market_data.best_ask_volume}")
+        print("------------")
+        
+        return market_data
 
     def __del__(self):
         self.socket.close()

@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 class CoreComponent {
 public:
@@ -23,26 +24,19 @@ public:
 
     int ProcessRequest(const char* request, int client_socket);
 
-    std::optional<Orderbook_State> GetTopNLevels(const std::string &ticker, int n);
-
-    std::optional<BBO> GetBestBBO(const std::string &ticker);
+    void AddWebsocketConnection(int currency_id);
 
 private:
     int server_fd_ = -1;
+
+    std::unordered_map<uint32_t, std::shared_ptr<Orderbook>> open_orderbooks_;
+    std::unordered_map<int, std::vector<uint32_t>> client_subscribe_list_;
 
     std::unordered_map<uint32_t, std::string> exchange_id_to_name_;
     std::unordered_map<std::string, Exchange*> exchange_map_;
     std::vector<std::string> exchange_list_;
 
-    Orderbook curr_book_;
-
     void ToNetworkOrder(double value, char* buffer);
-
-    void SendBestBBO(const char* request, int client_socket);
-
-    void SendBestBook(const char* request, int client_socket);
-
-    void SendLatestTrade(const char* request, int client_socket);
 };
 
 #endif // CORECOMPONENT_HPP
