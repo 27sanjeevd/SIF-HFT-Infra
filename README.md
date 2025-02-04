@@ -21,7 +21,7 @@ connection.subscribe("ETH")
 time.sleep(5)
 data = connection.parse("ETH")
 
-connection.cleanup()
+connection.unsubscribe("ETH")
 ```
 
 You can view an example file directly with `main.py`.
@@ -40,4 +40,4 @@ If there is no snapshot available when `parse` is called, then the method return
 
 
 ## Supported Currency List
-ETH (default)
+BTC, ETH, XRP, SOL, DOGE
