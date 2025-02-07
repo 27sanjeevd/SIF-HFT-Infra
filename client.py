@@ -85,7 +85,6 @@ class CryptoConnection:
         if not data:
             return None
         
-        #if msg_type == "BTC" or msg_type == "ETH":
         values = struct.unpack("!dddd", data[:32])
         market_data = MarketData(*values)
         

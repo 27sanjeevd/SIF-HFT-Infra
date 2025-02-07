@@ -37,6 +37,7 @@ If there is no snapshot available when `parse` is called, then the method return
 
 ## Supported Exchange List (Receiving Data, Sending Orders):
 - Coinbase (✅, ❌)
+- Crypto.com (✅, ❌)
 
 
 ## Supported Currency List
