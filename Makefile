@@ -8,6 +8,7 @@ SOURCES = core.cpp \
           src/simdjson.cpp \
           src/corecomponent.cpp \
           src/websockets/coinbase_ws.cpp \
+          src/websockets/crypto_ws.cpp \
           src/websocket.cpp \
           src/orderbook.cpp
 
@@ -24,6 +25,7 @@ build/%.o: %.cpp
 
 core: $(OBJECTS)
 	$(CXX) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $@
+
 
 clean:
 	rm -f core

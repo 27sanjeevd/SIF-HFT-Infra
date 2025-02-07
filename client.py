@@ -59,24 +59,24 @@ class CryptoConnection:
             try:
                 header = self.socket.recv(4)
                 if not header:
-                    print("Client disconnected")
+                    print("Server disconnected")
                     return
                 
                 message_length = struct.unpack('>i', header)[0]
                 market_data = self.socket.recv(message_length)
                 if not market_data:
-                    print("Client disconnected")
+                    print("Server disconnected")
                     return
                 
                 self.data[msg_type] = market_data
 
             except socket.error as e:
                 if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
-                    print(f"Error with client: {e}")
+                    print(f"Error with Server: {e}")
                     return
                 continue
             except Exception as e:
-                print(f"Error with client: {e}")
+                print(f"Error with Server: {e}")
                 return
 
 

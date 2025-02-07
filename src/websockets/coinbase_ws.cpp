@@ -1,6 +1,7 @@
 #include "../../include/websockets/coinbase_ws.hpp"
 
-Coinbase_WS::Coinbase_WS(std::shared_ptr<Orderbook> new_book, std::string &ws_id) : WebsocketConnection(new_book, ws_id) {
+Coinbase_WS::Coinbase_WS(std::shared_ptr<Orderbook> new_book, std::string &ws_id, 
+    std::shared_ptr<std::mutex> mutex) : WebsocketConnection(new_book, ws_id, mutex) {
     Initialize();
 
     id_to_currency_[1] = "BTC-USD";
@@ -62,15 +63,18 @@ void Coinbase_WS::HandleMessage(const std::string& message) {
                 double price = std::stod(std::string(price_level));
                 double volume = std::stod(std::string(new_quantity));
 
+                std::lock_guard<std::mutex> lock(*mutex_);
+
                 if (side == "bid") {
-                    curr_book_->update_bid(id_, price, volume);
+                    curr_book_->update_bid(id_, price * (1 - fee_percentage_), volume);
                 } 
                 else {
-                    curr_book_->update_ask(id_, price, volume);
+                    curr_book_->update_ask(id_, price * (1 + fee_percentage_), volume);
                 }
             }
         }
-    } catch (const simdjson::simdjson_error& e) {
+    } 
+    catch (const simdjson::simdjson_error& e) {
         std::cerr << "JSON parsing error: " << e.what() << std::endl;
     }
 }

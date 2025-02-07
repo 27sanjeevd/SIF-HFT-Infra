@@ -1,7 +1,11 @@
 #pragma once
 
-#ifndef COINBASE_WS_HPP
-#define COINBASE_WS_HPP
+/*
+    Crypto.com
+*/
+
+#ifndef CRYPTO_WS_HPP
+#define CRYPTO_WS_HPP
 
 #include "../websocket.hpp"
 
@@ -10,9 +14,9 @@
 #include <string>
 #include <memory>
 
-class Coinbase_WS : public WebsocketConnection {
+class Crypto_WS : public WebsocketConnection {
 public:
-    Coinbase_WS(std::shared_ptr<Orderbook> new_book, std::string &ws_id, std::shared_ptr<std::mutex> mutex);
+    Crypto_WS(std::shared_ptr<Orderbook> new_book, std::string &ws_id, std::shared_ptr<std::mutex> mutex);
 
     void SubscribeToChannel(std::string &currency_name, std::string &channel_name) override;
 
@@ -22,11 +26,14 @@ private:
     void HandleMessage(const std::string& message) override;
 
     std::string GetHost() const override;
+    std::string GetTarget() const override;
 
-    const std::string host_ = "advanced-trade-ws.coinbase.com";
-    const double fee_percentage_ = 0.002;
+    const std::string host_ = "stream.crypto.com";
+    const std::string target_ = "/exchange/v1/market";
+
+    const double fee_percentage_ = 0.0015;
 
     std::unordered_map<uint32_t, std::string> id_to_currency_;
 };
 
-#endif // COINBASE_WS_HPP
+#endif // CRYPTO_WS_HPP

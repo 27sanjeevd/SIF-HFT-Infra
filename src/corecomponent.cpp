@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <algorithm>
 
 static constexpr int kPort = 8080;
@@ -152,12 +153,13 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
 void CoreComponent::AddWebsocketConnection(int currency_id) {
 
     auto new_orderbook = std::make_shared<Orderbook>();
+    std::shared_ptr<std::mutex> mtx = std::make_shared<std::mutex>();
     open_orderbooks_[currency_id] = new_orderbook;
     
-    auto thread_func = [this, currency_id, new_orderbook]() {
-        std::string new_id = "id";
+    auto coinbase_thread_func = [this, currency_id, new_orderbook, mtx]() {
+        std::string new_id = "coinbase";
 
-        Coinbase_WS ws(new_orderbook, new_id);
+        Coinbase_WS ws(new_orderbook, new_id, mtx);
 
         auto currency_name = ws.GetCurrencyName(currency_id);
         if (!currency_name) {
@@ -170,8 +172,28 @@ void CoreComponent::AddWebsocketConnection(int currency_id) {
         ws.Connect(currency, channel);
     };
 
-    std::thread ws_thread(thread_func);
-    ws_thread.detach();
+    std::thread coinbase_thread(coinbase_thread_func);
+    coinbase_thread.detach();
+    
+    
+    auto crypto_thread_func = [this, currency_id, new_orderbook, mtx]() {
+        std::string new_id = "crypto";
+
+        Crypto_WS ws(new_orderbook, new_id, mtx);
+
+        auto currency_name = ws.GetCurrencyName(currency_id);
+        if (!currency_name) {
+            return;
+        }
+
+        std::string currency = *currency_name;
+        std::string channel = "SNAPSHOT_AND_UPDATE";
+
+        ws.Connect(currency, channel);
+    };
+
+    std::thread crypto_thread(crypto_thread_func);
+    crypto_thread.detach();
 }
 
 

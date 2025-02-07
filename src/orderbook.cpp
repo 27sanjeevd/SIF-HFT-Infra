@@ -150,7 +150,7 @@ void Orderbook::print_bbo() {
     }
 
     std::cout << "\n";
-    
+
 }
 
 size_t Orderbook::get_max_levels() const {

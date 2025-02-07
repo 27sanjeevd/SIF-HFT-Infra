@@ -1,7 +1,7 @@
 #include "../include/websocket.hpp"
 
-WebsocketConnection::WebsocketConnection(std::shared_ptr<Orderbook> new_book, std::string &ws_id) 
-    : curr_book_(new_book), id_(ws_id) {
+WebsocketConnection::WebsocketConnection(std::shared_ptr<Orderbook> new_book, std::string &ws_id,
+    std::shared_ptr<std::mutex> mutex) : curr_book_(new_book), id_(ws_id), mutex_(mutex) {
 
     curr_book_->initialize_exchange(id_);
 }
@@ -30,7 +30,7 @@ void WebsocketConnection::EstablishConnection() {
     net::connect(ws_.next_layer().next_layer(), results);
     
     ws_.next_layer().handshake(ssl::stream_base::client);
-    ws_.handshake(GetHost(), "/ws");
+    ws_.handshake(GetHost(), GetTarget());
 }
 
 void WebsocketConnection::StartMessageLoop() {
