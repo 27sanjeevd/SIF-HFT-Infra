@@ -128,7 +128,6 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
     data.message_type = OSSwapHostToBigInt32(data.message_type);
 
     if (data.message_type == 0) {
-        std::cout << "exit\n";
         for (auto currency : client_subscribe_list_[client_socket]) {
             open_orderbooks_[currency]->remove_client(client_socket);
         }
@@ -156,6 +155,12 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
                 open_orderbooks_[currency]->remove_client(client_socket);
             }
         }
+
+        auto& subscriptions = client_subscribe_list_[client_socket];
+        subscriptions.erase(
+            std::remove(subscriptions.begin(), subscriptions.end(), data.currency_name),
+            subscriptions.end()
+        );
     }
 
     return data.message_type;

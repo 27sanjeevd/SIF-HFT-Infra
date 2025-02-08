@@ -55,6 +55,7 @@ protected:
     net::io_context ioc_;
     ssl::context ctx_{ssl::context::tlsv12_client};
     websocket::stream<beast::ssl_stream<tcp::socket>> ws_{ioc_, ctx_};
+    beast::flat_buffer buffer_;
     simdjson::ondemand::parser json_parser_;
     std::shared_ptr<Orderbook> curr_book_;
 

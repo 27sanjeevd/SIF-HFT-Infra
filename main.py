@@ -17,7 +17,7 @@ if __name__ == "__main__":
     connection.subscribe("DOGE")
 
     time.sleep(2)
-    data = connection.parse("DOGE")
+    data = connection.parse(crypto_symbol)
 
     connection.unsubscribe("DOGE")
     connection.unsubscribe(crypto_symbol)

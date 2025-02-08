@@ -34,12 +34,11 @@ void WebsocketConnection::EstablishConnection() {
 }
 
 void WebsocketConnection::StartMessageLoop() {
-    beast::flat_buffer buffer;
-    
+
     while (true) {
-        ws_.read(buffer);
-        ProcessMessage(buffer);
-        buffer.consume(buffer.size());
+        ws_.read(buffer_);
+        ProcessMessage(buffer_);
+        buffer_.consume(buffer_.size());
     }
 }
 
