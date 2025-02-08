@@ -32,43 +32,47 @@ class CryptoConnection:
         except ConnectionError as e:
             print(f"Failed to connect: {e}")
             raise
-    
-    def unsubscribe(self, msg_type):
-        continue_channel = False
 
-        message = struct.pack("!?", continue_channel)
-        self.socket.sendall(message)
-
-    def subscribe(self, msg_type):
-        self.data[msg_type] = None
         self.running = True
 
         server_thread = threading.Thread(
             target=self._listen, 
-            args=(msg_type,),
             daemon=True
         )
         server_thread.start()
+    
+    def unsubscribe(self, currency_name):
+        continue_channel = 2
 
-    def _listen(self, msg_type, num_levels = 1):
-        continue_channel = True
-        message = struct.pack("!?II", continue_channel, self.currency_id[msg_type], num_levels)
+        message = struct.pack("!II", continue_channel, self.currency_id[currency_name])
         self.socket.sendall(message)
 
+    def subscribe(self, currency_name, num_levels = 1):
+        self.data[self.currency_id[currency_name]] = None
+
+        continue_channel = 1
+        message = struct.pack("!III", continue_channel, self.currency_id[currency_name], num_levels)
+        self.socket.sendall(message)
+
+    def _listen(self):
         while self.running:
             try:
-                header = self.socket.recv(4)
-                if not header:
+                currency_id = self.socket.recv(4)
+                if not currency_id:
                     print("Server disconnected")
                     return
                 
+                currency_id = struct.unpack('>i', currency_id)[0]
+
+                header = self.socket.recv(4)
+
                 message_length = struct.unpack('>i', header)[0]
                 market_data = self.socket.recv(message_length)
                 if not market_data:
                     print("Server disconnected")
                     return
                 
-                self.data[msg_type] = market_data
+                self.data[currency_id] = market_data
 
             except socket.error as e:
                 if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
@@ -80,8 +84,8 @@ class CryptoConnection:
                 return
 
 
-    def parse(self, msg_type):
-        data = self.data.get(msg_type)
+    def parse(self, currency_name):
+        data = self.data.get(self.currency_id[currency_name])
         if not data:
             return None
         
@@ -96,6 +100,17 @@ class CryptoConnection:
         print("------------")
         
         return market_data
+    
+    def close(self):
+        self.running = False
+
+        continue_channel = 0
+        message = struct.pack("!I", continue_channel)
+        self.socket.sendall(message)
+
+        if self.socket:
+            self.socket.close()
 
     def __del__(self):
-        self.socket.close()
+        if self.socket:
+            self.socket.close()

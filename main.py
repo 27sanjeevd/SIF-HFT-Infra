@@ -14,11 +14,13 @@ if __name__ == "__main__":
     connection.connect()
 
     connection.subscribe(crypto_symbol)
+    connection.subscribe("DOGE")
 
-    for x in range(30):
-        print(datetime.now())
-        data = connection.parse(crypto_symbol)
+    time.sleep(2)
+    data = connection.parse("DOGE")
 
-        time.sleep(1.5)
-
+    connection.unsubscribe("DOGE")
     connection.unsubscribe(crypto_symbol)
+
+    time.sleep(5)
+    connection.close()

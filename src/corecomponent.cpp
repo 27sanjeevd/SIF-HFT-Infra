@@ -81,7 +81,7 @@ void CoreComponent::ReceiveConnections() {
 
 #pragma pack(1)
 struct ReceivedData {
-    bool continue_connection;
+    uint32_t message_type;
     uint32_t currency_name;
     uint32_t num_levels;
 };
@@ -108,9 +108,9 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 
         socket_buffer[bytes_received] = '\0';
 
-        bool return_code = ProcessRequest(socket_buffer, client_socket);
+        uint32_t return_code = ProcessRequest(socket_buffer, client_socket);
 
-        if (!return_code) {
+        if (return_code == 0) {
             std::cout << "Closed connection\n";
             break;
         }
@@ -124,19 +124,20 @@ void CoreComponent::ConnectionHandler(int client_socket) {
 int CoreComponent::ProcessRequest(const char* request, int client_socket) {
     ReceivedData data;
 
-    data.continue_connection = static_cast<bool>(request[0]);
+    std::memcpy(&data.message_type, request, sizeof(uint32_t));
+    data.message_type = OSSwapHostToBigInt32(data.message_type);
 
-    if (!data.continue_connection) {
+    if (data.message_type == 0) {
         std::cout << "exit\n";
         for (auto currency : client_subscribe_list_[client_socket]) {
             open_orderbooks_[currency]->remove_client(client_socket);
         }
     }
-    else {
-        std::memcpy(&data.currency_name, request + 1, sizeof(uint32_t));
+    else if (data.message_type == 1) {
+        std::memcpy(&data.currency_name, request + 4, sizeof(uint32_t));
         data.currency_name = OSSwapHostToBigInt32(data.currency_name);
 
-        std::memcpy(&data.num_levels, request + 5, sizeof(uint32_t));
+        std::memcpy(&data.num_levels, request + 8, sizeof(uint32_t));
         data.num_levels = OSSwapHostToBigInt32(data.num_levels);
         
         if (!open_orderbooks_.contains(data.currency_name)) {
@@ -146,13 +147,23 @@ int CoreComponent::ProcessRequest(const char* request, int client_socket) {
         open_orderbooks_[data.currency_name]->add_client(client_socket);
         client_subscribe_list_[client_socket].push_back(data.currency_name);
     }
+    else if (data.message_type == 2) {
+        std::memcpy(&data.currency_name, request + 4, sizeof(uint32_t));
+        data.currency_name = OSSwapHostToBigInt32(data.currency_name);
 
-    return data.continue_connection;
+        for (auto currency : client_subscribe_list_[client_socket]) {
+            if (currency == data.currency_name) {
+                open_orderbooks_[currency]->remove_client(client_socket);
+            }
+        }
+    }
+
+    return data.message_type;
 }
 
-void CoreComponent::AddWebsocketConnection(int currency_id) {
+void CoreComponent::AddWebsocketConnection(uint32_t currency_id) {
 
-    auto new_orderbook = std::make_shared<Orderbook>();
+    auto new_orderbook = std::make_shared<Orderbook>(currency_id);
     std::shared_ptr<std::mutex> mtx = std::make_shared<std::mutex>();
     open_orderbooks_[currency_id] = new_orderbook;
     

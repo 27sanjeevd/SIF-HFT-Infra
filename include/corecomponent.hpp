@@ -25,7 +25,7 @@ public:
 
     int ProcessRequest(const char* request, int client_socket);
 
-    void AddWebsocketConnection(int currency_id);
+    void AddWebsocketConnection(uint32_t currency_id);
 
 private:
     int server_fd_ = -1;

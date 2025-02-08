@@ -74,21 +74,25 @@ void Orderbook::send_snapshot() {
     
     top_levels_updated_ = true;
     
-    char buffer[36];
+    char buffer[40];
 
+    uint32_t currency_id = currency_id_;
     uint32_t remainingSize = 32;
     double bestBidPrice = bids_.begin()->first;
     double bestBidVolume = bids_.begin()->second;
     double bestAskPrice = asks_.begin()->first;
     double bestAskVolume = asks_.begin()->second;
 
-    remainingSize = OSSwapHostToBigInt32(remainingSize);
-    std::memcpy(buffer, &remainingSize, 4);
+    currency_id = OSSwapHostToBigInt32(currency_id);
+    std::memcpy(buffer, &currency_id, 4);
 
-    ToNetworkOrder(bestBidPrice, buffer + 4);
-    ToNetworkOrder(bestBidVolume, buffer + 12);
-    ToNetworkOrder(bestAskPrice, buffer + 20);
-    ToNetworkOrder(bestAskVolume, buffer + 28);
+    remainingSize = OSSwapHostToBigInt32(remainingSize);
+    std::memcpy(buffer + 4, &remainingSize, 4);
+
+    ToNetworkOrder(bestBidPrice, buffer + 8);
+    ToNetworkOrder(bestBidVolume, buffer + 16);
+    ToNetworkOrder(bestAskPrice, buffer + 24);
+    ToNetworkOrder(bestAskVolume, buffer + 32);
 
     
     for (auto client_socket : client_send_list_) {
@@ -118,6 +122,8 @@ bool Orderbook::IsInFirstNKeys(T& orders_map, double price, Compare comp) {
 
     return false;
 }
+
+Orderbook::Orderbook(int currency_id) : currency_id_(currency_id) {}
 
 
 void Orderbook::update_bid(const std::string &exchange_id, double price, double new_volume) {

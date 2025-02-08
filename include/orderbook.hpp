@@ -29,6 +29,8 @@ private:
     std::vector<int> client_send_list_;
     bool top_levels_updated_ = false;
 
+    uint32_t currency_id_;
+
     template <typename T>
     void rebalance(T& orders_map);
 
@@ -50,7 +52,7 @@ private:
     bool IsInFirstNKeys(T& orders_map, double price, Compare comp);
 
 public:
-    Orderbook() = default;
+    Orderbook(int currency_id);
 
     void update_bid(const std::string &exchange_id, double price, double new_volume);
     void update_ask(const std::string &exchange_id, double price, double new_volume);
