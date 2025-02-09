@@ -14,12 +14,12 @@ if __name__ == "__main__":
     connection.connect()
 
     connection.subscribe(crypto_symbol)
-    connection.subscribe("DOGE")
+    #connection.subscribe("DOGE")
 
     time.sleep(2)
     data = connection.parse(crypto_symbol)
 
-    connection.unsubscribe("DOGE")
+    #connection.unsubscribe("DOGE")
     connection.unsubscribe(crypto_symbol)
 
     time.sleep(5)

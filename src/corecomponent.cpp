@@ -208,8 +208,8 @@ void CoreComponent::AddWebsocketConnection(uint32_t currency_id) {
         ws.Connect(currency, channel);
     };
 
-    std::thread crypto_thread(crypto_thread_func);
-    crypto_thread.detach();
+    //std::thread crypto_thread(crypto_thread_func);
+    //crypto_thread.detach();
 }
 
 

@@ -17,6 +17,8 @@
 #include <string_view>
 #include <vector>
 
+#include <chrono>
+
 #include "orderbook.hpp"
 
 namespace beast = boost::beast;
@@ -52,6 +54,8 @@ protected:
 
     virtual std::string GetTarget() const { return "/ws"; }
 
+    void CalculateRoundTime(std::chrono::system_clock::time_point start_time);
+
     net::io_context ioc_;
     ssl::context ctx_{ssl::context::tlsv12_client};
     websocket::stream<beast::ssl_stream<tcp::socket>> ws_{ioc_, ctx_};
@@ -62,6 +66,9 @@ protected:
     std::shared_ptr<std::mutex> mutex_;
 
     std::string id_;
+
+    double average_time_ = 0;
+    std::vector<int> time_list_;
 };
 
 #endif // WEBSOCKET_HPP

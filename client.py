@@ -4,6 +4,8 @@ import threading
 import errno
 from dataclasses import dataclass
 
+import time
+
 @dataclass
 class MarketData:
     best_bid_price: float
@@ -71,7 +73,7 @@ class CryptoConnection:
                 if not market_data:
                     print("Server disconnected")
                     return
-                
+
                 self.data[currency_id] = market_data
 
             except socket.error as e:

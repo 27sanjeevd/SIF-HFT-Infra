@@ -36,9 +36,13 @@ void WebsocketConnection::EstablishConnection() {
 void WebsocketConnection::StartMessageLoop() {
 
     while (true) {
+        auto now = std::chrono::system_clock::now();
+
         ws_.read(buffer_);
         ProcessMessage(buffer_);
         buffer_.consume(buffer_.size());
+
+        CalculateRoundTime(now);
     }
 }
 
@@ -56,4 +60,21 @@ void WebsocketConnection::Disconnect() {
     } catch (std::exception const& e) {
         std::cerr << "Error closing connection: " << e.what() << std::endl;
     }
+}
+
+void WebsocketConnection::CalculateRoundTime(std::chrono::system_clock::time_point start_time) {
+    auto now = std::chrono::system_clock::now();
+    auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
+    if (time_diff < 1000) {
+        average_time_ += static_cast<double>(time_diff);
+        time_list_.push_back(time_diff);
+
+        if (time_list_.size() > 50) {
+            int beg = time_list_.front();
+            time_list_.erase(time_list_.begin());
+            average_time_ -= beg;
+        }
+    }
+
+    std::cout << (average_time_) / (time_list_.size()) << "\n";
 }
