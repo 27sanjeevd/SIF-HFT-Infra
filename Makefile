@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=c++20 -I./include -I/opt/homebrew/include -I/opt/homebrew/opt/openssl/include -pthread
+CXXFLAGS = -O2 -std=c++20 -I./include -I/opt/homebrew/include -I/opt/homebrew/opt/openssl/include -pthread
 LDFLAGS = -L/opt/homebrew/lib -L/opt/homebrew/opt/openssl/lib
 LDLIBS = -lssl -lcrypto -lboost_system -lboost_json -lcurl
 

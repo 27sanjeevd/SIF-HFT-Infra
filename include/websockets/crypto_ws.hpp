@@ -23,7 +23,7 @@ public:
     std::optional<std::string> GetCurrencyName(uint32_t currency_id);
 
 private:
-    void HandleMessage(const std::string& message) override;
+    void HandleMessage(const std::string_view& message) override;
 
     std::string GetHost() const override;
     std::string GetTarget() const override;

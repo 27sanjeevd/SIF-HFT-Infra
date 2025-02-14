@@ -18,6 +18,8 @@
 #include <vector>
 
 #include <chrono>
+#include <deque>
+#include <cstdlib>
 
 #include "orderbook.hpp"
 
@@ -27,6 +29,9 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 namespace ssl = boost::asio::ssl;
 using tcp = boost::asio::ip::tcp;
+
+static double average_time = 0;
+static std::deque<int> time_list;
 
 class WebsocketConnection {
 public:
@@ -48,13 +53,15 @@ public:
     void Disconnect();
 
 protected:
-    virtual void HandleMessage(const std::string& message) = 0;
+    virtual void HandleMessage(const std::string_view& message) = 0;
 
     virtual std::string GetHost() const = 0;
 
     virtual std::string GetTarget() const { return "/ws"; }
 
     void CalculateRoundTime(std::chrono::system_clock::time_point start_time);
+
+    bool ConvertToDouble(std::string_view sv, double &result);
 
     net::io_context ioc_;
     ssl::context ctx_{ssl::context::tlsv12_client};
@@ -64,11 +71,7 @@ protected:
     std::shared_ptr<Orderbook> curr_book_;
 
     std::shared_ptr<std::mutex> mutex_;
-
     std::string id_;
-
-    double average_time_ = 0;
-    std::vector<int> time_list_;
 };
 
 #endif // WEBSOCKET_HPP

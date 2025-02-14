@@ -36,18 +36,18 @@ void WebsocketConnection::EstablishConnection() {
 void WebsocketConnection::StartMessageLoop() {
 
     while (true) {
-        auto now = std::chrono::system_clock::now();
+        //auto now = std::chrono::system_clock::now();
 
         ws_.read(buffer_);
         ProcessMessage(buffer_);
         buffer_.consume(buffer_.size());
 
-        CalculateRoundTime(now);
+        //CalculateRoundTime(now);
     }
 }
 
 void WebsocketConnection::ProcessMessage(const beast::flat_buffer& buffer) {
-    std::string message(
+    std::string_view message(
         static_cast<const char*>(buffer.data().data()),
         buffer.data().size()
     );
@@ -65,16 +65,25 @@ void WebsocketConnection::Disconnect() {
 void WebsocketConnection::CalculateRoundTime(std::chrono::system_clock::time_point start_time) {
     auto now = std::chrono::system_clock::now();
     auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-    if (time_diff < 1000) {
-        average_time_ += static_cast<double>(time_diff);
-        time_list_.push_back(time_diff);
 
-        if (time_list_.size() > 50) {
-            int beg = time_list_.front();
-            time_list_.erase(time_list_.begin());
-            average_time_ -= beg;
+    if (time_diff < 1000) {
+        if (time_list.size() < 50) {
+            average_time += static_cast<double>(time_diff);
+            time_list.push_back(time_diff);
+        } 
+        else {
+            average_time += static_cast<double>(time_diff) - time_list.front();
+            time_list.pop_front();
+            time_list.push_back(time_diff);
         }
     }
 
-    std::cout << (average_time_) / (time_list_.size()) << "\n";
+    std::cout << (average_time) / time_list.size() << "\n";
+}
+
+bool WebsocketConnection::ConvertToDouble(std::string_view sv, double &result) {
+    std::string temp(sv);
+    char* endptr = nullptr;
+    result = std::strtod(temp.c_str(), &endptr);
+    return (endptr && static_cast<size_t>(endptr - temp.c_str()) == temp.size());
 }

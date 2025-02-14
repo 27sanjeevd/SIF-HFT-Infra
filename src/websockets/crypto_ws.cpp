@@ -37,43 +37,46 @@ std::optional<std::string> Crypto_WS::GetCurrencyName(uint32_t currency_id) {
 }
 
 
-void Crypto_WS::HandleMessage(const std::string& message) {
+void Crypto_WS::HandleMessage(const std::string_view& message) {
     try {
-        simdjson::padded_string padded_message{message};
+        simdjson::padded_string padded_message{message.data(), message.size()};
         auto doc = json_parser_.iterate(padded_message);
-        
         auto result = doc["result"];
+
+        std::vector<std::tuple<bool, double, double>> aggregated_updates;
         
         std::string_view channel;
         result["channel"].get(channel);
 
-        auto process_orders = [](simdjson::simdjson_result<simdjson::ondemand::value> orders, 
-                        std::shared_ptr<Orderbook>& curr_book,
-                        const std::string& id, 
-                        const double fee_percentage,
-                        bool is_bid) {
+        auto process_orders = [this](simdjson::simdjson_result<simdjson::ondemand::value> orders, 
+                               std::vector<std::tuple<bool, double, double>>& update_list,
+                               std::shared_ptr<Orderbook>& curr_book,
+                               const std::string& id, 
+                               const double fee_percentage,
+                               bool is_bid) {
+            
             for (auto order : orders) {
-                std::string_view price_level, level_size, num_orders;
+                std::string_view price_level_str, new_quantity_str, num_orders_str;
                 size_t index = 0;
-                
+
                 for (auto value : order) {
                     switch(index) {
-                        case 0: value.get(price_level); break;
-                        case 1: value.get(level_size); break;
-                        case 2: value.get(num_orders); break;
+                        case 0: value.get(price_level_str); break;
+                        case 1: value.get(new_quantity_str); break;
+                        case 2: value.get(num_orders_str); break;
                     }
                     index++;
                 }
 
-                double price = std::stod(std::string(price_level));
-                double volume = std::stod(std::string(level_size));
+                double price = 0.0, volume = 0.0;
+                if (!ConvertToDouble(price_level_str, price)) {
+                    continue;
+                }
+                if (!ConvertToDouble(new_quantity_str, volume)) {
+                    continue;
+                }
 
-                if (is_bid) {
-                    curr_book->update_bid(id, price * (1 - fee_percentage), volume);
-                }
-                else {
-                    curr_book->update_ask(id, price * (1 + fee_percentage), volume);
-                }
+                update_list.emplace_back(is_bid, price, volume);
             }
         };
 
@@ -81,8 +84,8 @@ void Crypto_WS::HandleMessage(const std::string& message) {
         if (channel == "book") {
             for (auto data : result["data"]) {
                 std::lock_guard<std::mutex> lock(*mutex_);
-                process_orders(data["asks"], curr_book_, id_, fee_percentage_, false);
-                process_orders(data["bids"], curr_book_, id_, fee_percentage_, true);
+                process_orders(data["asks"], aggregated_updates, curr_book_, id_, fee_percentage_, false);
+                process_orders(data["bids"], aggregated_updates, curr_book_, id_, fee_percentage_, true);
             }
         }
         else if (channel == "book.update") {
@@ -90,8 +93,19 @@ void Crypto_WS::HandleMessage(const std::string& message) {
                 auto update = data["update"];
 
                 std::lock_guard<std::mutex> lock(*mutex_);
-                process_orders(update["asks"], curr_book_, id_, fee_percentage_, false);
-                process_orders(update["bids"], curr_book_, id_, fee_percentage_, true);
+                process_orders(update["asks"], aggregated_updates, curr_book_, id_, fee_percentage_, false);
+                process_orders(update["bids"], aggregated_updates, curr_book_, id_, fee_percentage_, true);
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(*mutex_);
+            for (const auto& [side, price, volume] : aggregated_updates) {
+                if (side) {
+                    curr_book_->update_bid(id_, price * (1 - fee_percentage_), volume);
+                } else {
+                    curr_book_->update_ask(id_, price * (1 + fee_percentage_), volume);
+                }
             }
         }
     } 

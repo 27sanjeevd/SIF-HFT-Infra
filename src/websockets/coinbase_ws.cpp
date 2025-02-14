@@ -31,11 +31,13 @@ std::optional<std::string> Coinbase_WS::GetCurrencyName(uint32_t currency_id) {
 }
 
 
-void Coinbase_WS::HandleMessage(const std::string& message) {
+void Coinbase_WS::HandleMessage(const std::string_view& message) {
     try {
-        simdjson::padded_string padded_message{message};
+        simdjson::padded_string padded_message{message.data(), message.size()};
         auto doc = json_parser_.iterate(padded_message);
         auto events = doc["events"];
+
+        std::vector<std::tuple<std::string_view, double, double>> aggregated_updates;
 
         for (auto event : events) {
             std::string_view type;
@@ -49,26 +51,35 @@ void Coinbase_WS::HandleMessage(const std::string& message) {
 
             auto updates = event["updates"];
             for (auto update : updates) {
-                std::string_view side, event_time, price_level, new_quantity;
+                std::string_view side, event_time, price_level_str, new_quantity_str;
                 
                 bool success = update["side"].get(side) == simdjson::SUCCESS &&
                             update["event_time"].get(event_time) == simdjson::SUCCESS &&
-                            update["price_level"].get(price_level) == simdjson::SUCCESS &&
-                            update["new_quantity"].get(new_quantity) == simdjson::SUCCESS;
+                            update["price_level"].get(price_level_str) == simdjson::SUCCESS &&
+                            update["new_quantity"].get(new_quantity_str) == simdjson::SUCCESS;
                 
                 if (!success) {
                     continue;
                 }
 
-                double price = std::stod(std::string(price_level));
-                double volume = std::stod(std::string(new_quantity));
+                double price = 0.0, volume = 0.0;
+                if (!ConvertToDouble(price_level_str, price)) {
+                    continue;
+                }
+                if (!ConvertToDouble(new_quantity_str, volume)) {
+                    continue;
+                }
 
-                std::lock_guard<std::mutex> lock(*mutex_);
+                aggregated_updates.emplace_back(side, price, volume);
+            }
+        }
 
+        {
+            std::lock_guard<std::mutex> lock(*mutex_);
+            for (const auto& [side, price, volume] : aggregated_updates) {
                 if (side == "bid") {
                     curr_book_->update_bid(id_, price * (1 - fee_percentage_), volume);
-                } 
-                else {
+                } else {
                     curr_book_->update_ask(id_, price * (1 + fee_percentage_), volume);
                 }
             }
